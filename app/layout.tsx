@@ -10,6 +10,9 @@ export const metadata: Metadata = {
   title: "Budget Guru - Personal Finance Management",
   description:
     "Complete financial management with expense tracking, budgeting, and intelligent insights",
+  icons: {
+    icon: "/components/public/wallet.ico",
+  },
 };
 
 export default function RootLayout({
