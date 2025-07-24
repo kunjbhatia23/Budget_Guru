@@ -1,4 +1,10 @@
-import { ProfileTransaction, ProfileBudget, UserGroup, Profile } from '@/types/profile';
+import {
+  ProfileTransaction,
+  ProfileBudget,
+  UserGroup,
+  Profile,
+  ExpenseSplitData // <-- This import was missing
+} from '@/types/profile';
 import { API_CONFIG } from './constants';
 
 // Enhanced error handling
@@ -32,7 +38,7 @@ async function apiRequest<T>(
     });
 
     clearTimeout(timeoutId);
-    
+
     // For DELETE requests with no body
     if (response.status === 204 || response.headers.get('content-length') === '0') {
       const text = await response.text();
@@ -40,7 +46,6 @@ async function apiRequest<T>(
         return Promise.resolve() as Promise<T>;
       }
     }
-
 
     const data = await response.json().catch(() => ({}));
 
@@ -127,10 +132,17 @@ export const profileApi = {
       console.error('Failed to delete profile:', error);
       throw new Error('Failed to delete profile. Please try again.');
     }
-  }
-};
+  },
 
-// ... (rest of the file remains the same)
+  async getExpenseSplit(groupId: string): Promise<ExpenseSplitData> {
+    try {
+      return await apiRequest<ExpenseSplitData>(`/api/expense-split/${groupId}`);
+    } catch (error) {
+      console.error('Failed to fetch expense split:', error);
+      throw new Error('Failed to calculate expense split. Please try again.');
+    }
+  },
+};
 
 // Profile Transaction API functions
 export const profileTransactionApi = {

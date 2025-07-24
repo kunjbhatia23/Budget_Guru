@@ -1,28 +1,29 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useProfileStore } from "@/store/profile-store";
+import { useState, useEffect } from 'react';
+import { useProfileStore } from '@/store/profile-store';
 import {
   profileApi,
   profileTransactionApi,
   profileBudgetApi,
-} from "@/lib/profile-api";
-import { ViewModeToggle } from "@/components/profile/view-mode-toggle";
-import { TransactionForm } from "@/components/TransactionForm";
-import { TransactionList } from "@/components/TransactionList";
-import { ExpenseChart } from "@/components/ExpenseChart";
-import { CategoryChart } from "@/components/CategoryChart";
-import { BudgetSetup } from "@/components/BudgetSetup";
-import { BudgetOverview } from "@/components/BudgetOverview";
-import { BudgetChart } from "@/components/BudgetChart";
-import { FinanceStats } from "@/components/FinanceStats";
-import { Sidebar } from "@/components/Sidebar";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { Transaction, Budget } from "@/types/finance";
-import { ProfileTransaction, ProfileBudget } from "@/types/profile";
-import { Loader2, AlertCircle, RefreshCw } from "lucide-react";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
+} from '@/lib/profile-api';
+import { ViewModeToggle } from '@/components/profile/view-mode-toggle';
+import { TransactionForm } from '@/components/TransactionForm';
+import { TransactionList } from '@/components/TransactionList';
+import { ExpenseChart } from '@/components/ExpenseChart';
+import { CategoryChart } from '@/components/CategoryChart';
+import { BudgetSetup } from '@/components/BudgetSetup';
+import { BudgetOverview } from '@/components/BudgetOverview';
+import { BudgetChart } from '@/components/BudgetChart';
+import { FinanceStats } from '@/components/FinanceStats';
+import { Sidebar } from '@/components/Sidebar';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Transaction, Budget } from '@/types/finance';
+import { ProfileTransaction, ProfileBudget, ExpenseSplitData } from '@/types/profile';
+import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { ThemeToggle } from '@/components/theme/theme-toggle';
+import { ExpenseSplit } from '@/components/ExpenseSplit';
 
 export default function Home() {
   // Profile store
@@ -45,6 +46,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState("overview");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [splitData, setSplitData] = useState<ExpenseSplitData | null>(null);
 
   // Load data from database on component mount
   useEffect(() => {
@@ -80,6 +82,7 @@ export default function Home() {
       try {
         setLoading(true);
         setError(null);
+        setSplitData(null); // Clear previous split data
 
         const [transactionsData, budgetsData] = await Promise.all([
           profileTransactionApi.getAll(
@@ -94,32 +97,22 @@ export default function Home() {
           ),
         ]);
 
+        if (viewMode.type === 'group') {
+          const splitResult = await profileApi.getExpenseSplit(groupId);
+          setSplitData(splitResult);
+        }
+
         // Convert MongoDB _id to id for compatibility
         const normalizedTransactions = transactionsData.map(
           (t: ProfileTransaction) => ({
             ...t,
             id: t._id || t.id,
-            // Convert ProfileTransaction to Transaction format
-            _id: t._id,
-            amount: t.amount,
-            date: t.date,
-            description: t.description,
-            type: t.type,
-            category: t.category,
-            createdAt: t.createdAt,
           })
         );
 
         const normalizedBudgets = budgetsData.map((b: ProfileBudget) => ({
           ...b,
           id: b._id || b.id,
-          // Convert ProfileBudget to Budget format
-          _id: b._id,
-          category: b.category,
-          amount: b.amount,
-          spent: b.spent,
-          remaining: b.remaining,
-          percentage: b.percentage,
         }));
 
         setTransactions(normalizedTransactions);
@@ -487,6 +480,11 @@ export default function Home() {
               onDelete={handleDeleteTransaction}
             />
           </div>
+        );
+      
+      case "split":
+        return (
+          <ExpenseSplit splitData={splitData} loading={loading} isGroupView={isGroupView()} />
         );
 
       default:

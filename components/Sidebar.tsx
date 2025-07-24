@@ -17,6 +17,7 @@ import {
   Wallet,
   ChevronLeft,
   ChevronRight,
+  Scale, // Add the Scale icon
 } from "lucide-react";
 
 interface SidebarProps {
@@ -55,6 +56,12 @@ const navigationItems = [
     label: "History",
     icon: List,
     description: "All transactions",
+  },
+  {
+    id: "split",
+    label: "Expense Split",
+    icon: Scale,
+    description: "Settle group debts",
   },
 ];
 

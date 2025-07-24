@@ -60,7 +60,6 @@ export async function GET(request: NextRequest) {
       }
       const groupObjectId = new mongoose.Types.ObjectId(groupId);
 
-      // 1. Aggregate budgets by category for the whole group
       const aggregatedBudgets = await ProfileBudget.aggregate([
         { $match: { groupId: groupObjectId } },
         { $group: {
@@ -74,7 +73,6 @@ export async function GET(request: NextRequest) {
         }}
       ]);
       
-      // 2. Aggregate expenses by category for the whole group for the current month
       const now = new Date();
       const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -97,11 +95,10 @@ export async function GET(request: NextRequest) {
         return acc;
       }, {} as Record<string, number>);
 
-      // 3. Combine aggregated budgets and expenses
       const finalGroupBudgets = aggregatedBudgets.map(budget => {
         const spent = expenseMap[budget.category] || 0;
         return {
-          id: budget.category, // Use category as a unique key
+          id: budget.category,
           ...budget,
           spent,
           remaining: budget.amount - spent,
@@ -128,7 +125,6 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-
 
 export async function POST(request: NextRequest) {
   try {
