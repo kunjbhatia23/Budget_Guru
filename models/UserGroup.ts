@@ -1,5 +1,4 @@
 import mongoose, { Document, Schema } from "mongoose";
-import { VALIDATION_CONFIG } from "@/lib/constants";
 
 interface IProfile extends Document {
   name: string;
@@ -9,7 +8,7 @@ interface IProfile extends Document {
 
 interface IUserGroup extends Document {
   name: string;
-  type: 'family' | 'roommates' | 'personal' | 'other';
+  type: 'family' | 'roommates' | 'personal' | 'other' | 'friends';
   profiles: IProfile[];
 }
 
@@ -52,8 +51,9 @@ const UserGroupSchema = new Schema<IUserGroup>(
       type: String,
       required: [true, "Group type is required"],
       enum: {
-        values: ['family', 'roommates', 'personal', 'other'],
-        message: 'Type must be one of: family, roommates, personal, other',
+        // *** CRITICAL FIX: Ensure 'friends' is in the schema enum ***
+        values: ['family', 'roommates', 'personal', 'other', 'friends'],
+        message: 'Type must be one of: family, roommates, personal, friends, other',
       },
       default: 'personal',
     },

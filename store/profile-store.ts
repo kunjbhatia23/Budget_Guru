@@ -35,19 +35,22 @@ export const useProfileStore = create<ProfileState>()(
 
       // Actions
       setCurrentGroup: (group) => {
+        const { currentProfile } = get();
         set({ currentGroup: group });
         
-        // Auto-select first profile if switching groups
-        if (group && group.profiles.length > 0) {
-          const firstProfile = group.profiles[0];
-          set({ 
-            currentProfile: firstProfile,
-            viewMode: { 
-              type: 'individual', 
-              profileId: firstProfile._id || firstProfile.id,
-              groupId: group._id || group.id || ''
-            }
-          });
+        // If the new group doesn't contain the current profile, update it
+        if (group && (!currentProfile || !group.profiles.some(p => p._id === currentProfile._id))) {
+            const firstProfile = group.profiles[0];
+            set({ 
+              currentProfile: firstProfile,
+              viewMode: { 
+                type: 'individual', 
+                profileId: firstProfile?._id || firstProfile?.id,
+                groupId: group._id || group.id || ''
+              }
+            });
+        } else if (!group) { // If group is null, clear profile
+            set({ currentProfile: null });
         }
       },
 
@@ -69,27 +72,30 @@ export const useProfileStore = create<ProfileState>()(
       setViewMode: (mode) => set({ viewMode: mode }),
 
       setGroups: (groups) => {
-        set({ groups });
+        const { currentGroup, currentProfile } = get();
+        const stillExists = groups.some(g => g._id === currentGroup?._id);
         
-        // Auto-select first group if none selected
-        const { currentGroup } = get();
-        if (!currentGroup && groups.length > 0) {
-          const firstGroup = groups[0];
-          set({ currentGroup: firstGroup });
-          
-          if (firstGroup.profiles.length > 0) {
+        // If the current group was deleted, select the first available group.
+        if (!stillExists && groups.length > 0) {
+            const firstGroup = groups[0];
             const firstProfile = firstGroup.profiles[0];
             set({ 
-              currentProfile: firstProfile,
-              viewMode: {
-                type: 'individual',
-                profileId: firstProfile._id || firstProfile.id,
-                groupId: firstGroup._id || firstGroup.id || ''
-              }
+                groups, 
+                currentGroup: firstGroup, 
+                currentProfile: firstProfile,
+                viewMode: {
+                    type: 'individual',
+                    profileId: firstProfile?._id || firstProfile?.id,
+                    groupId: firstGroup._id || firstGroup.id || ''
+                }
             });
-          }
+        } else if (groups.length === 0) {
+            set({ groups: [], currentGroup: null, currentProfile: null });
+        } else {
+            set({ groups });
         }
       },
+
 
       // Computed getters
       getCurrentGroupId: () => {

@@ -11,7 +11,7 @@ export interface UserGroup {
   _id?: string;
   id?: string;
   name: string;
-  type: 'family' | 'roommates' | 'personal' | 'other';
+  type: 'family' | 'roommates' | 'personal' | 'other' | 'friends';
   profiles: Profile[];
   createdAt?: string;
 }

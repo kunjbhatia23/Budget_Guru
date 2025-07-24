@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Check, ChevronsUpDown, Plus, Users, User } from 'lucide-react';
+import { Check, ChevronsUpDown, Plus, Users, User, Edit } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -20,10 +20,10 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { useProfileStore } from '@/store/profile-store';
 import { Profile, UserGroup } from '@/types/profile';
 import { CreateProfileDialog } from './create-profile-dialog';
+import { EditProfileDialog } from './edit-profile-dialog';
 
 interface ProfileSwitcherProps {
   className?: string;
@@ -42,12 +42,14 @@ export function ProfileSwitcher({ className }: ProfileSwitcherProps) {
     setViewMode,
   } = useProfileStore();
 
-  const handleGroupSelect = (group: UserGroup) => {
+  /**
+   * CRITICAL FIX: This function now accepts both the group and the profile.
+   * This ensures that when a user selects a profile from any group,
+   * the application's state for BOTH the current group and current profile is updated,
+   * preventing inconsistent states that caused the bug.
+   */
+  const handleProfileSelect = (group: UserGroup, profile: Profile) => {
     setCurrentGroup(group);
-    setOpen(false);
-  };
-
-  const handleProfileSelect = (profile: Profile) => {
     setCurrentProfile(profile);
     setOpen(false);
   };
@@ -61,6 +63,7 @@ export function ProfileSwitcher({ className }: ProfileSwitcherProps) {
       profileId: newMode === 'individual' ? currentProfile?._id || currentProfile?.id : undefined,
       groupId: currentGroup._id || currentGroup.id || '',
     });
+    setOpen(false);
   };
 
   const getDisplayText = () => {
@@ -80,10 +83,10 @@ export function ProfileSwitcher({ className }: ProfileSwitcherProps) {
     return <User className="h-4 w-4" />;
   };
 
-  // Show create dialog if no groups exist
   if (groups.length === 0) {
     return <CreateProfileDialog />;
   }
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -107,11 +110,10 @@ export function ProfileSwitcher({ className }: ProfileSwitcherProps) {
           <CommandList>
             <CommandEmpty>No profiles found.</CommandEmpty>
             
-            {/* Current Group Actions */}
             {currentGroup && (
               <>
-                <CommandGroup heading="View Mode">
-                  <CommandItem onSelect={toggleViewMode}>
+                <CommandGroup heading="Actions">
+                  <CommandItem onSelect={toggleViewMode} className="cursor-pointer">
                     <div className="flex items-center gap-2">
                       {viewMode.type === 'group' ? (
                         <User className="h-4 w-4" />
@@ -119,37 +121,25 @@ export function ProfileSwitcher({ className }: ProfileSwitcherProps) {
                         <Users className="h-4 w-4" />
                       )}
                       <span>
-                        Switch to {viewMode.type === 'group' ? 'Individual' : 'Group'} View
+                        Switch to {viewMode.type === 'group' ? 'Individual' : 'Group View'}
                       </span>
                     </div>
+                  </CommandItem>
+                   <CommandItem onSelect={() => {}}>
+                    <EditProfileDialog group={currentGroup} />
                   </CommandItem>
                 </CommandGroup>
                 <CommandSeparator />
               </>
             )}
 
-            {/* Groups */}
             {groups.map((group) => (
               <CommandGroup key={group._id || group.id} heading={group.name}>
-                <CommandItem
-                  onSelect={() => handleGroupSelect(group)}
-                  className="text-sm"
-                >
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    <span>Group View</span>
-                    {currentGroup?._id === group._id && viewMode.type === 'group' && (
-                      <Check className="ml-auto h-4 w-4" />
-                    )}
-                  </div>
-                </CommandItem>
-                
-                {/* Profiles in this group */}
                 {group.profiles.map((profile) => (
                   <CommandItem
                     key={profile._id || profile.id}
-                    onSelect={() => handleProfileSelect(profile)}
-                    className="text-sm pl-6"
+                    onSelect={() => handleProfileSelect(group, profile)} // Pass both group and profile here
+                    className="text-sm cursor-pointer"
                   >
                     <div className="flex items-center gap-2">
                       <Avatar className="h-5 w-5">
@@ -172,7 +162,7 @@ export function ProfileSwitcher({ className }: ProfileSwitcherProps) {
 
             <CommandSeparator />
             <CommandGroup>
-              <CommandItem>
+              <CommandItem onSelect={() => {}}>
                 <div className="w-full">
                   <CreateProfileDialog />
                 </div>

@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     await dbConnect();
     const body = await request.json();
 
-    // Validate input
+    // Validate name
     if (!body.name || typeof body.name !== "string" || body.name.trim() === "") {
       return NextResponse.json(
         { error: "Group name is required" },
@@ -35,13 +35,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!body.type || !['family', 'roommates', 'personal', 'other'].includes(body.type)) {
+    // *** CRITICAL FIX: Ensure 'friends' is in this validation array ***
+    const allowedGroupTypes = ['family', 'roommates', 'personal', 'other', 'friends'];
+    if (!body.type || !allowedGroupTypes.includes(body.type)) {
       return NextResponse.json(
-        { error: "Valid group type is required" },
+        { error: `Valid group type is required. Must be one of: ${allowedGroupTypes.join(', ')}` },
         { status: 400 }
       );
     }
 
+    // Validate profiles
     if (!Array.isArray(body.profiles) || body.profiles.length === 0) {
       return NextResponse.json(
         { error: "At least one profile is required" },
@@ -49,7 +52,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate profiles
     for (const profile of body.profiles) {
       if (!profile.name || typeof profile.name !== "string" || profile.name.trim() === "") {
         return NextResponse.json(
@@ -59,6 +61,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Create and save the new group
     const group = new UserGroup({
       name: body.name.trim(),
       type: body.type,
@@ -71,6 +74,7 @@ export async function POST(request: NextRequest) {
 
     const savedGroup = await group.save();
     return NextResponse.json(savedGroup, { status: 201 });
+
   } catch (error: any) {
     console.error("Error creating user group:", error);
 

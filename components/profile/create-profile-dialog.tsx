@@ -21,7 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { Plus, X, Users } from 'lucide-react';
 import { profileApi } from '@/lib/profile-api';
 import { useProfileStore } from '@/store/profile-store';
@@ -37,9 +36,9 @@ export function CreateProfileDialog() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [groupName, setGroupName] = useState('');
-  const [groupType, setGroupType] = useState<'family' | 'roommates' | 'personal' | 'other'>('personal');
+  const [groupType, setGroupType] = useState<'family' | 'roommates' | 'personal' | 'other' | 'friends'>('personal');
   const [profiles, setProfiles] = useState([
-    { name: '', color: profileColors[0] }
+    { name: 'Me', color: profileColors[0] }
   ]);
   
   const { setGroups, groups } = useProfileStore();
@@ -110,13 +109,13 @@ export function CreateProfileDialog() {
       // Reset form
       setGroupName('');
       setGroupType('personal');
-      setProfiles([{ name: '', color: profileColors[0] }]);
+      setProfiles([{ name: 'Me', color: profileColors[0] }]);
       setOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating group:', error);
       toast({
         title: 'Error',
-        description: 'Failed to create group. Please try again.',
+        description: error.message || 'Failed to create group. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -144,7 +143,6 @@ export function CreateProfileDialog() {
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Group Details */}
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -167,14 +165,13 @@ export function CreateProfileDialog() {
                     <SelectItem value="personal">Personal</SelectItem>
                     <SelectItem value="family">Family</SelectItem>
                     <SelectItem value="roommates">Roommates</SelectItem>
+                    <SelectItem value="friends">Friends</SelectItem>
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
           </div>
-
-          {/* Profiles */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <Label className="text-base font-medium">Profiles</Label>
@@ -189,7 +186,6 @@ export function CreateProfileDialog() {
                 Add Profile
               </Button>
             </div>
-
             <div className="space-y-3">
               {profiles.map((profile, index) => (
                 <div key={index} className="flex items-center gap-3 p-3 border rounded-lg bg-card">
@@ -205,7 +201,6 @@ export function CreateProfileDialog() {
                       className="flex-1"
                     />
                   </div>
-                  
                   <div className="flex items-center gap-2">
                     <Select
                       value={profile.color}
@@ -230,7 +225,6 @@ export function CreateProfileDialog() {
                         ))}
                       </SelectContent>
                     </Select>
-                    
                     {profiles.length > 1 && (
                       <Button
                         type="button"
@@ -246,12 +240,7 @@ export function CreateProfileDialog() {
                 </div>
               ))}
             </div>
-
-            <div className="text-sm text-muted-foreground">
-              Add up to 10 profiles. Each profile will have their own transactions and budgets.
-            </div>
           </div>
-
           <DialogFooter>
             <Button
               type="button"
