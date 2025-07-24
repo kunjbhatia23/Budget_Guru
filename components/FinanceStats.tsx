@@ -12,12 +12,14 @@ import {
   ArrowUpRight,
   ArrowDownRight
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface FinanceStatsProps {
   transactions: Transaction[];
+  isGroupView: boolean;
 }
 
-export function FinanceStats({ transactions }: FinanceStatsProps) {
+export function FinanceStats({ transactions, isGroupView }: FinanceStatsProps) {
   const totalIncome = transactions
     .filter(t => t.type === 'income')
     .reduce((sum, t) => sum + t.amount, 0);
@@ -37,46 +39,40 @@ export function FinanceStats({ transactions }: FinanceStatsProps) {
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0);
 
-  const daysInMonth = new Date().getDate();
-  const avgDailySpending = daysInMonth > 0 ? thisMonthExpenses / daysInMonth : 0;
-
   const savingsRate = thisMonthIncome > 0
     ? ((thisMonthIncome - thisMonthExpenses) / thisMonthIncome) * 100
     : 0;
 
-  const stats = [
+  let stats = [
     {
       title: 'Total Balance',
       value: formatCurrency(balance),
       icon: DollarSign,
       color: balance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400',
-      bgColor: balance >= 0 ? 'bg-green-50 dark:bg-green-900' : 'bg-red-50 dark:bg-red-900',
+      bgColor: balance >= 0 ? 'bg-green-50 dark:bg-green-900/50' : 'bg-red-50 dark:bg-red-900/50',
       borderColor: balance >= 0 ? 'border-green-200 dark:border-green-700' : 'border-red-200 dark:border-red-700',
-      description: 'Net worth',
+      description: 'Net financial position',
       trend: balance >= 0 ? 'positive' : 'negative',
-      change: balance >= 0 ? '+' : ''
     },
     {
       title: 'Monthly Income',
       value: formatCurrency(thisMonthIncome),
       icon: TrendingUp,
       color: 'text-green-600 dark:text-green-400',
-      bgColor: 'bg-green-50 dark:bg-green-900',
+      bgColor: 'bg-green-50 dark:bg-green-900/50',
       borderColor: 'border-green-200 dark:border-green-700',
       description: 'This month',
       trend: 'positive',
-      change: '+'
     },
     {
       title: 'Monthly Expenses',
       value: formatCurrency(thisMonthExpenses),
       icon: TrendingDown,
       color: 'text-red-600 dark:text-red-400',
-      bgColor: 'bg-red-50 dark:bg-red-900',
+      bgColor: 'bg-red-50 dark:bg-red-900/50',
       borderColor: 'border-red-200 dark:border-red-700',
       description: 'This month',
       trend: 'negative',
-      change: '-'
     },
     {
       title: 'Savings Rate',
@@ -90,10 +86,10 @@ export function FinanceStats({ transactions }: FinanceStatsProps) {
           : 'text-red-600 dark:text-red-400',
       bgColor:
         savingsRate >= 20
-          ? 'bg-green-50 dark:bg-green-900'
+          ? 'bg-green-50 dark:bg-green-900/50'
           : savingsRate >= 10
-          ? 'bg-yellow-50 dark:bg-yellow-900'
-          : 'bg-red-50 dark:bg-red-900',
+          ? 'bg-yellow-50 dark:bg-yellow-900/50'
+          : 'bg-red-50 dark:bg-red-900/50',
       borderColor:
         savingsRate >= 20
           ? 'border-green-200 dark:border-green-700'
@@ -106,8 +102,15 @@ export function FinanceStats({ transactions }: FinanceStatsProps) {
     },
   ];
 
+  if (isGroupView) {
+    stats = stats.filter(stat => stat.title !== 'Monthly Income' && stat.title !== 'Savings Rate');
+  }
+
   return (
-    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 w-full max-w-6xl mx-auto">
+    <div className={cn(
+        "grid gap-4 grid-cols-1 sm:grid-cols-2",
+        isGroupView ? "lg:grid-cols-2" : "lg:grid-cols-4"
+    )}>
       {stats.map((stat, index) => (
         <Card
           key={index}
@@ -122,9 +125,9 @@ export function FinanceStats({ transactions }: FinanceStatsProps) {
               <CardTitle className="text-sm font-medium text-muted-foreground dark:text-zinc-300">
                 {stat.title}
               </CardTitle>
-              {stat.badge && (
+              {stat.badge && !isGroupView && (
                 <Badge
-                  variant={stat.trend === 'positive' ? 'default' : 'secondary'}
+                  variant={stat.trend === 'positive' ? 'default' : stat.trend === 'neutral' ? 'secondary' : 'destructive'}
                   className="text-xs"
                 >
                   {stat.badge}
@@ -155,8 +158,4 @@ export function FinanceStats({ transactions }: FinanceStatsProps) {
       ))}
     </div>
   );
-}
-
-function cn(...classes: string[]) {
-  return classes.filter(Boolean).join(' ');
 }

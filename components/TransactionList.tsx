@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -39,18 +39,26 @@ interface TransactionListProps {
   transactions: Transaction[];
   onEdit: (transaction: Transaction) => void;
   onDelete: (id: string) => void;
+  isGroupView: boolean;
 }
 
 export function TransactionList({
   transactions,
   onEdit,
   onDelete,
+  isGroupView,
 }: TransactionListProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<"all" | "income" | "expense">(
     "all"
   );
   const [filterCategory, setFilterCategory] = useState<string>("all");
+
+  useEffect(() => {
+    if (isGroupView && filterType === 'income') {
+      setFilterType('all');
+    }
+  }, [isGroupView, filterType]);
 
   const allCategories = [
     ...new Set([...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES]),
@@ -91,7 +99,6 @@ export function TransactionList({
             Track all your income and expenses with advanced filtering
           </CardDescription>
 
-          {/* Search and Filters */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
@@ -117,7 +124,7 @@ export function TransactionList({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="income">Income</SelectItem>
+                  {!isGroupView && <SelectItem value="income">Income</SelectItem>}
                   <SelectItem value="expense">Expense</SelectItem>
                 </SelectContent>
               </Select>
@@ -198,15 +205,6 @@ export function TransactionList({
                         {transaction.type === "income" ? "+" : "-"}
                         {formatCurrency(transaction.amount)}
                       </p>
-                      <Badge
-                        variant={
-                          transaction.type === "income"
-                            ? "default"
-                            : "secondary"
-                        }
-                      >
-                        {transaction.type}
-                      </Badge>
                     </div>
                     <div className="flex gap-1 justify-center sm:justify-start">
                       <Button

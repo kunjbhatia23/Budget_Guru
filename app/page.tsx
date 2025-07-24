@@ -396,7 +396,7 @@ export default function Home() {
         return (
           <div className="space-y-8">
             <div className="space-y-6">
-              <FinanceStats transactions={transactions} />
+              <FinanceStats transactions={transactions} isGroupView={isGroupView()} />
             </div>
             <ExpenseChart transactions={transactions} />
           </div>
@@ -459,6 +459,7 @@ export default function Home() {
               onSubmit={handleAddTransaction}
               editingTransaction={editingTransaction}
               onCancel={handleCancelEdit}
+              isGroupView={isGroupView()}
             />
           </div>
         );
@@ -478,6 +479,7 @@ export default function Home() {
               transactions={transactions}
               onEdit={handleEditTransaction}
               onDelete={handleDeleteTransaction}
+              isGroupView={isGroupView()}
             />
           </div>
         );
