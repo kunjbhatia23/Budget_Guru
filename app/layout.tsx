@@ -11,7 +11,8 @@ export const metadata: Metadata = {
   description:
     "Complete financial management with expense tracking, budgeting, and intelligent insights",
   icons: {
-    icon: "/components/public/wallet.ico",
+    // This path is now correct. It points to the root of the public folder.
+    icon: "/favicon.ico", 
   },
 };
 
