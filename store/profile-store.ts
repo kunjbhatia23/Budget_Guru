@@ -3,79 +3,31 @@ import { persist } from 'zustand/middleware';
 import { Profile, UserGroup, ViewMode } from '@/types/profile';
 
 interface ProfileState {
-  // Current state
   currentGroup: UserGroup | null;
   currentProfile: Profile | null;
   viewMode: ViewMode;
-  
-  // Available data
   groups: UserGroup[];
-  
-  // Actions
-  setCurrentGroup: (group: UserGroup | null) => void;
-  setCurrentProfile: (profile: Profile | null) => void;
-  setViewMode: (mode: ViewMode) => void;
+  setCurrentGroup: (group: UserGroup) => void;
+  setCurrentProfile: (group: UserGroup, profile: Profile) => void;
   setGroups: (groups: UserGroup[]) => void;
-  
-  // Computed getters
+  toggleViewMode: () => void;
   getCurrentGroupId: () => string | null;
   getCurrentProfileId: () => string | null;
   isGroupView: () => boolean;
-  isIndividualView: () => boolean;
 }
 
 export const useProfileStore = create<ProfileState>()(
   persist(
     (set, get) => ({
-      // Initial state
       currentGroup: null,
       currentProfile: null,
       viewMode: { type: 'individual', groupId: '' },
       groups: [],
 
-      // Actions
-      setCurrentGroup: (group) => {
-        const { currentProfile } = get();
-        set({ currentGroup: group });
-        
-        // If the new group doesn't contain the current profile, update it
-        if (group && (!currentProfile || !group.profiles.some(p => p._id === currentProfile._id))) {
-            const firstProfile = group.profiles[0];
-            set({ 
-              currentProfile: firstProfile,
-              viewMode: { 
-                type: 'individual', 
-                profileId: firstProfile?._id || firstProfile?.id,
-                groupId: group._id || group.id || ''
-              }
-            });
-        } else if (!group) { // If group is null, clear profile
-            set({ currentProfile: null });
-        }
-      },
-
-      setCurrentProfile: (profile) => {
-        set({ currentProfile: profile });
-        
-        const { currentGroup } = get();
-        if (profile && currentGroup) {
-          set({
-            viewMode: {
-              type: 'individual',
-              profileId: profile._id || profile.id,
-              groupId: currentGroup._id || currentGroup.id || ''
-            }
-          });
-        }
-      },
-
-      setViewMode: (mode) => set({ viewMode: mode }),
-
       setGroups: (groups) => {
-        const { currentGroup, currentProfile } = get();
+        const { currentGroup } = get();
         const stillExists = groups.some(g => g._id === currentGroup?._id);
         
-        // If the current group was deleted, select the first available group.
         if (!stillExists && groups.length > 0) {
             const firstGroup = groups[0];
             const firstProfile = firstGroup.profiles[0];
@@ -96,21 +48,74 @@ export const useProfileStore = create<ProfileState>()(
         }
       },
 
-
-      // Computed getters
-      getCurrentGroupId: () => {
-        const { currentGroup } = get();
-        return currentGroup?._id || currentGroup?.id || null;
+      setCurrentGroup: (group) => {
+        set(() => {
+          const firstProfile = group?.profiles[0] || null;
+          return {
+            currentGroup: group,
+            currentProfile: firstProfile,
+            viewMode: {
+              type: 'individual',
+              groupId: group?._id || group?.id || '',
+              profileId: firstProfile?._id || firstProfile?.id
+            }
+          };
+        });
       },
 
+      // This function now correctly receives both group and profile
+      setCurrentProfile: (group, profile) => {
+        if (!profile || !group) {
+            console.error("setCurrentProfile called with invalid arguments");
+            return;
+        }
+        set({
+          currentGroup: group,
+          currentProfile: profile,
+          viewMode: {
+            type: 'individual',
+            groupId: group._id || group.id || '',
+            profileId: profile._id || profile.id,
+          }
+        });
+      },
+
+      toggleViewMode: () => {
+        set((state) => {
+          if (!state.currentGroup) return {};
+
+          const isSwitchingToGroup = state.viewMode.type === 'individual';
+          if (isSwitchingToGroup) {
+            return {
+              currentProfile: null, 
+              viewMode: {
+                type: 'group',
+                groupId: state.currentGroup._id || state.currentGroup.id || '',
+              }
+            };
+          } else { 
+            const profileToSelect = state.currentGroup.profiles.find(p => p.name === 'Me') || state.currentGroup.profiles[0];
+            return {
+              currentProfile: profileToSelect,
+              viewMode: {
+                type: 'individual',
+                groupId: state.currentGroup._id || state.currentGroup.id || '',
+                profileId: profileToSelect._id || profileToSelect.id,
+              }
+            };
+          }
+        });
+      },
+
+      getCurrentGroupId: () => get().currentGroup?._id || null,
       getCurrentProfileId: () => {
-        const { currentProfile } = get();
-        return currentProfile?._id || currentProfile?.id || null;
+        const { viewMode, currentProfile } = get();
+        if (viewMode.type === 'individual') {
+          return currentProfile?._id || null;
+        }
+        return null;
       },
-
       isGroupView: () => get().viewMode.type === 'group',
-
-      isIndividualView: () => get().viewMode.type === 'individual',
     }),
     {
       name: 'profile-store',

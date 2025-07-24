@@ -9,21 +9,11 @@ import { useProfileStore } from '@/store/profile-store';
 export function ViewModeToggle() {
   const {
     currentGroup,
-    currentProfile,
     viewMode,
-    setViewMode,
+    toggleViewMode,
   } = useProfileStore();
 
   if (!currentGroup) return null;
-
-  const toggleViewMode = () => {
-    const newMode = viewMode.type === 'individual' ? 'group' : 'individual';
-    setViewMode({
-      type: newMode,
-      profileId: newMode === 'individual' ? currentProfile?._id || currentProfile?.id : undefined,
-      groupId: currentGroup._id || currentGroup.id || '',
-    });
-  };
 
   const isGroupView = viewMode.type === 'group';
 

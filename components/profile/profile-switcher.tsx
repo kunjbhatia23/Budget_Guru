@@ -39,30 +39,12 @@ export function ProfileSwitcher({ className }: ProfileSwitcherProps) {
     setCurrentGroup,
     setCurrentProfile,
     viewMode,
-    setViewMode,
+    toggleViewMode,
   } = useProfileStore();
 
-  /**
-   * CRITICAL FIX: This function now accepts both the group and the profile.
-   * This ensures that when a user selects a profile from any group,
-   * the application's state for BOTH the current group and current profile is updated,
-   * preventing inconsistent states that caused the bug.
-   */
+  // **CRITICAL FIX**: This handler now correctly calls setCurrentProfile with both the group and profile
   const handleProfileSelect = (group: UserGroup, profile: Profile) => {
-    setCurrentGroup(group);
-    setCurrentProfile(profile);
-    setOpen(false);
-  };
-
-  const toggleViewMode = () => {
-    if (!currentGroup) return;
-    
-    const newMode = viewMode.type === 'individual' ? 'group' : 'individual';
-    setViewMode({
-      type: newMode,
-      profileId: newMode === 'individual' ? currentProfile?._id || currentProfile?.id : undefined,
-      groupId: currentGroup._id || currentGroup.id || '',
-    });
+    setCurrentProfile(group, profile);
     setOpen(false);
   };
 
@@ -138,7 +120,8 @@ export function ProfileSwitcher({ className }: ProfileSwitcherProps) {
                 {group.profiles.map((profile) => (
                   <CommandItem
                     key={profile._id || profile.id}
-                    onSelect={() => handleProfileSelect(group, profile)} // Pass both group and profile here
+                    // **CRITICAL FIX**: Pass both the group and the profile to the handler
+                    onSelect={() => handleProfileSelect(group, profile)}
                     className="text-sm cursor-pointer"
                   >
                     <div className="flex items-center gap-2">
