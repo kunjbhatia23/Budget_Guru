@@ -1,7 +1,22 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend
+} from 'recharts';
 import { Budget } from '@/types/finance';
 import { useChartTheme } from '@/lib/theme-config';
 import { formatCurrency } from '@/lib/finance-utils';
@@ -13,15 +28,19 @@ interface BudgetChartProps {
 
 export function BudgetChart({ budgets }: BudgetChartProps) {
   const chartTheme = useChartTheme();
-  const chartData = budgets.map(budget => ({
-    category: budget.category.length > 12 ? budget.category.substring(0, 12) + '...' : budget.category,
+
+  const chartData = budgets.map((budget) => ({
+    category:
+      budget.category.length > 12
+        ? budget.category.substring(0, 12) + '...'
+        : budget.category,
     fullCategory: budget.category,
     budget: budget.amount,
     spent: budget.spent,
-    remaining: Math.max(0, budget.remaining)
+    remaining: budget.amount - budget.spent
   }));
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
@@ -30,7 +49,15 @@ export function BudgetChart({ budgets }: BudgetChartProps) {
           <div className="space-y-1 text-sm">
             <p className="text-primary">Budget: {formatCurrency(data.budget)}</p>
             <p className="text-destructive">Spent: {formatCurrency(data.spent)}</p>
-            <p className="text-green-600">Remaining: {formatCurrency(data.remaining)}</p>
+            <p
+              className={
+                data.remaining >= 0
+                  ? 'text-green-600 dark:text-green-400'
+                  : 'text-red-600 dark:text-red-400'
+              }
+            >
+              Remaining: {formatCurrency(data.remaining)}
+            </p>
           </div>
         </div>
       );
@@ -50,6 +77,7 @@ export function BudgetChart({ budgets }: BudgetChartProps) {
             Compare your planned budget with actual spending
           </CardDescription>
         </CardHeader>
+
         <CardContent>
           {budgets.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
@@ -58,39 +86,40 @@ export function BudgetChart({ budgets }: BudgetChartProps) {
           ) : (
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid 
+                <BarChart
+                  data={chartData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid
                     stroke="hsl(var(--border))"
                     strokeDasharray={chartTheme.grid.strokeDasharray}
                   />
-                  <XAxis 
-                    dataKey="category" 
+                  <XAxis
+                    dataKey="category"
                     className="text-sm"
-                    tick={{ fontSize: 12 }}
+                    tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
                     angle={-45}
                     textAnchor="end"
                     height={80}
-                    stroke="hsl(var(--muted-foreground))"
                   />
-                  <YAxis 
+                  <YAxis
                     className="text-sm"
-                    tick={{ fontSize: 12 }}
-                    tickFormatter={(value) => `$${value}`}
-                    stroke="hsl(var(--muted-foreground))"
+                    tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                    tickFormatter={(value) => `₹${value}`}
                   />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend />
-                  <Bar 
-                    dataKey="budget" 
-                    fill="hsl(var(--primary))"
+                  <Bar
+                    dataKey="budget"
+                    fill="#7c3aed" // Tailwind violet-600
                     name="Budget"
-                    radius={[2, 2, 0, 0]}
+                    radius={[4, 4, 0, 0]}
                   />
-                  <Bar 
-                    dataKey="spent" 
-                    fill="hsl(var(--destructive))"
+                  <Bar
+                    dataKey="spent"
+                    fill="#c026d3" // Tailwind fuchsia-600
                     name="Spent"
-                    radius={[2, 2, 0, 0]}
+                    radius={[4, 4, 0, 0]}
                   />
                 </BarChart>
               </ResponsiveContainer>

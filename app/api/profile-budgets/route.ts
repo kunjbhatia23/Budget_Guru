@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import mongoose from "mongoose";
 import dbConnect from "@/lib/db";
 import ProfileBudget from "@/models/ProfileBudget";
 import ProfileTransaction from "@/models/ProfileTransaction";
@@ -17,11 +18,11 @@ export async function GET(request: NextRequest) {
     let transactionQuery: any = {};
 
     if (viewMode === 'group' && groupId) {
-      budgetQuery.groupId = groupId;
-      transactionQuery.groupId = groupId;
+      budgetQuery.groupId = new mongoose.Types.ObjectId(groupId);
+      transactionQuery.groupId = new mongoose.Types.ObjectId(groupId);
     } else if (viewMode === 'individual' && profileId) {
-      budgetQuery.profileId = profileId;
-      transactionQuery.profileId = profileId;
+      budgetQuery.profileId = new mongoose.Types.ObjectId(profileId);
+      transactionQuery.profileId = new mongoose.Types.ObjectId(profileId);
     } else {
       return NextResponse.json(
         { error: "Profile ID or Group ID is required" },
@@ -31,10 +32,14 @@ export async function GET(request: NextRequest) {
 
     const budgets = await ProfileBudget.find(budgetQuery).lean();
 
-    // Calculate current spending for each budget
-    const currentMonth = new Date().toISOString().slice(0, 7);
+    // Calculate current spending for each budget for the current month
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    lastDayOfMonth.setHours(23, 59, 59, 999); // Ensure we include the entire last day
+
     transactionQuery.type = "expense";
-    transactionQuery.date = { $regex: `^${currentMonth}` };
+    transactionQuery.date = { $gte: firstDayOfMonth, $lte: lastDayOfMonth };
 
     const monthlyExpenses = await ProfileTransaction.aggregate([
       { $match: transactionQuery },
@@ -53,14 +58,14 @@ export async function GET(request: NextRequest) {
 
     const updatedBudgets = budgets.map((budget) => {
       const spent = expenseMap[budget.category] || 0;
-      const remaining = Math.max(0, budget.amount - spent);
+      const remaining = budget.amount - spent;
       const percentage = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
 
       return {
         ...budget,
         spent,
         remaining,
-        percentage: Math.min(100, Math.max(0, percentage)),
+        percentage,
       };
     });
 

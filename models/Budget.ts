@@ -50,13 +50,11 @@ const BudgetSchema = new Schema<IBudget>(
     remaining: {
       type: Number,
       default: 0,
-      min: [0, "Remaining amount cannot be negative"],
     },
     percentage: {
       type: Number,
       default: 0,
       min: [0, "Percentage cannot be negative"],
-      max: [100, "Percentage cannot exceed 100"],
     },
   },
   {
@@ -74,11 +72,9 @@ BudgetSchema.index({ amount: -1 });
 BudgetSchema.pre<IBudget>("save", function (next) {
   this.amount = Math.round(this.amount * 100) / 100;
   this.category = this.category.trim();
-  this.remaining = Math.max(0, this.amount - this.spent);
+  this.remaining = this.amount - this.spent;
   this.percentage =
-    this.amount > 0
-      ? Math.min(100, Math.max(0, (this.spent / this.amount) * 100))
-      : 0;
+    this.amount > 0 ? (this.spent / this.amount) * 100 : 0;
   next();
 });
 

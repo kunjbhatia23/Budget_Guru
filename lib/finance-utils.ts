@@ -8,7 +8,7 @@ export const formatCurrency = (amount: number): string => {
   
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'INR',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount);
@@ -119,14 +119,14 @@ export const calculateBudgetStatus = (budgets: Budget[], transactions: Transacti
 
     return budgets.map(budget => {
       const spent = monthlyExpenses[budget.category] || 0;
-      const remaining = Math.max(0, budget.amount - spent);
+      const remaining = budget.amount - spent;
       const percentage = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
 
       return {
         ...budget,
         spent,
         remaining,
-        percentage: Math.min(100, Math.max(0, percentage))
+        percentage: Math.max(0, percentage)
       };
     });
   } catch (error) {

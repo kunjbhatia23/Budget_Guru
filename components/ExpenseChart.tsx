@@ -63,13 +63,13 @@ export function ExpenseChart({ transactions }: ExpenseChartProps) {
                   <YAxis 
                     className="text-sm"
                     tick={{ fontSize: 12 }}
-                    tickFormatter={(value) => `$${value}`}
+                    tickFormatter={(value) => `₹${value}`}
                     stroke="hsl(var(--muted-foreground))"
                   />
                   <Tooltip content={<CustomTooltip />} />
                   <Bar 
                     dataKey="amount" 
-                    fill="hsl(var(--primary))"
+                    fill={chartTheme.colors.primary}
                     radius={[4, 4, 0, 0]}
                   />
                 </BarChart>
