@@ -65,19 +65,19 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   return (
     <>
       {/* Mobile Menu Button */}
-      <Button
-        variant="outline"
-        size="sm"
-        className="fixed top-4 left-4 z-50 md:hidden shadow-lg bg-white/90 backdrop-blur-sm border-border/50"
-        onClick={() => setIsMobileOpen(!isMobileOpen)}
-        aria-label={isMobileOpen ? "Close menu" : "Open menu"}
-      >
-        {isMobileOpen ? (
-          <X className="h-4 w-4" />
-        ) : (
-          <Menu className="h-4 w-4" />
-        )}
-      </Button>
+     <Button
+      variant="outline"
+      size="sm"
+      className="fixed top-4 left-4 z-50 md:hidden shadow-lg bg-background/80 backdrop-blur-sm border border-border text-foreground hover:bg-accent"
+      onClick={() => setIsMobileOpen(!isMobileOpen)}
+      aria-label={isMobileOpen ? "Close menu" : "Open menu"}
+    >
+      {isMobileOpen ? (
+        <X className="h-5 w-5" />
+      ) : (
+        <Menu className="h-5 w-5" />
+      )}
+    </Button>
 
       {/* Mobile Overlay */}
       {isMobileOpen && (
@@ -99,7 +99,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
           isMobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}
       >
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full overflow-hidden">
           {/* Header */}
           <div className="p-6 border-b border-border flex-shrink-0">
             <div className="flex items-center gap-3">
