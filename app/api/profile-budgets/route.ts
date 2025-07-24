@@ -14,62 +14,106 @@ export async function GET(request: NextRequest) {
     const groupId = searchParams.get('groupId');
     const viewMode = searchParams.get('viewMode') || 'individual';
 
-    let budgetQuery: any = {};
-    let transactionQuery: any = {};
+    // **LOGIC FOR INDIVIDUAL VIEW**
+    if (viewMode === 'individual') {
+      if (!profileId) {
+        return NextResponse.json({ error: "Profile ID is required for individual view" }, { status: 400 });
+      }
+      
+      const budgets = await ProfileBudget.find({ profileId: new mongoose.Types.ObjectId(profileId) }).lean();
+      
+      const now = new Date();
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      lastDayOfMonth.setHours(23, 59, 59, 999);
 
-    if (viewMode === 'group' && groupId) {
-      budgetQuery.groupId = new mongoose.Types.ObjectId(groupId);
-      transactionQuery.groupId = new mongoose.Types.ObjectId(groupId);
-    } else if (viewMode === 'individual' && profileId) {
-      budgetQuery.profileId = new mongoose.Types.ObjectId(profileId);
-      transactionQuery.profileId = new mongoose.Types.ObjectId(profileId);
-    } else {
-      return NextResponse.json(
-        { error: "Profile ID or Group ID is required" },
-        { status: 400 }
-      );
+      const monthlyExpenses = await ProfileTransaction.aggregate([
+        { $match: { 
+            profileId: new mongoose.Types.ObjectId(profileId),
+            type: "expense",
+            date: { $gte: firstDayOfMonth, $lte: lastDayOfMonth }
+        }},
+        { $group: { _id: "$category", spent: { $sum: "$amount" }}},
+      ]);
+
+      const expenseMap = monthlyExpenses.reduce((acc, item) => {
+        acc[item._id] = item.spent;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const updatedBudgets = budgets.map((budget) => {
+        const spent = expenseMap[budget.category] || 0;
+        return {
+          ...budget,
+          spent,
+          remaining: budget.amount - spent,
+          percentage: budget.amount > 0 ? (spent / budget.amount) * 100 : 0,
+        };
+      });
+      return NextResponse.json(updatedBudgets);
+    }
+    
+    // **NEW AGGREGATION LOGIC FOR GROUP VIEW**
+    if (viewMode === 'group') {
+      if (!groupId) {
+        return NextResponse.json({ error: "Group ID is required for group view" }, { status: 400 });
+      }
+      const groupObjectId = new mongoose.Types.ObjectId(groupId);
+
+      // 1. Aggregate budgets by category for the whole group
+      const aggregatedBudgets = await ProfileBudget.aggregate([
+        { $match: { groupId: groupObjectId } },
+        { $group: {
+            _id: "$category",
+            amount: { $sum: "$amount" }
+        }},
+        { $project: {
+            _id: 0,
+            category: "$_id",
+            amount: 1
+        }}
+      ]);
+      
+      // 2. Aggregate expenses by category for the whole group for the current month
+      const now = new Date();
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      lastDayOfMonth.setHours(23, 59, 59, 999);
+
+      const monthlyExpenses = await ProfileTransaction.aggregate([
+        { $match: {
+            groupId: groupObjectId,
+            type: 'expense',
+            date: { $gte: firstDayOfMonth, $lte: lastDayOfMonth }
+        }},
+        { $group: {
+            _id: '$category',
+            spent: { $sum: '$amount' }
+        }}
+      ]);
+
+      const expenseMap = monthlyExpenses.reduce((acc, item) => {
+        acc[item._id] = item.spent;
+        return acc;
+      }, {} as Record<string, number>);
+
+      // 3. Combine aggregated budgets and expenses
+      const finalGroupBudgets = aggregatedBudgets.map(budget => {
+        const spent = expenseMap[budget.category] || 0;
+        return {
+          id: budget.category, // Use category as a unique key
+          ...budget,
+          spent,
+          remaining: budget.amount - spent,
+          percentage: budget.amount > 0 ? (spent / budget.amount) * 100 : 0,
+        };
+      });
+
+      return NextResponse.json(finalGroupBudgets);
     }
 
-    const budgets = await ProfileBudget.find(budgetQuery).lean();
+    return NextResponse.json({ error: "Invalid view mode specified" }, { status: 400 });
 
-    // Calculate current spending for each budget for the current month
-    const now = new Date();
-    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    lastDayOfMonth.setHours(23, 59, 59, 999); // Ensure we include the entire last day
-
-    transactionQuery.type = "expense";
-    transactionQuery.date = { $gte: firstDayOfMonth, $lte: lastDayOfMonth };
-
-    const monthlyExpenses = await ProfileTransaction.aggregate([
-      { $match: transactionQuery },
-      {
-        $group: {
-          _id: "$category",
-          spent: { $sum: "$amount" },
-        },
-      },
-    ]);
-
-    const expenseMap = monthlyExpenses.reduce((acc, item) => {
-      acc[item._id] = item.spent;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const updatedBudgets = budgets.map((budget) => {
-      const spent = expenseMap[budget.category] || 0;
-      const remaining = budget.amount - spent;
-      const percentage = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
-
-      return {
-        ...budget,
-        spent,
-        remaining,
-        percentage,
-      };
-    });
-
-    return NextResponse.json(updatedBudgets);
   } catch (error) {
     console.error("Error fetching profile budgets:", error);
     return NextResponse.json(
@@ -85,12 +129,12 @@ export async function GET(request: NextRequest) {
   }
 }
 
+
 export async function POST(request: NextRequest) {
   try {
     await dbConnect();
     const body = await request.json();
 
-    // Validate input
     if (!body.profileId || typeof body.profileId !== "string") {
       return NextResponse.json(
         { error: "Profile ID is required" },
@@ -112,7 +156,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate each budget
     for (const budget of body.budgets) {
       if (!budget.category || typeof budget.category !== "string" || budget.category.trim() === "") {
         return NextResponse.json(
@@ -136,7 +179,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Check for duplicate categories
     const categories = body.budgets.map((b: any) => b.category.trim().toLowerCase());
     const uniqueCategories = new Set(categories);
     if (categories.length !== uniqueCategories.size) {
@@ -146,7 +188,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Clear existing budgets for this profile and create new ones
     await ProfileBudget.deleteMany({ profileId: body.profileId });
 
     const sanitizedBudgets = body.budgets.map((budget: any) => ({

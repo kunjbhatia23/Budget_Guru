@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import mongoose from "mongoose";
 import dbConnect from "@/lib/db";
 import ProfileTransaction from "@/models/ProfileTransaction";
 import { VALIDATION_CONFIG } from "@/lib/constants";
@@ -14,15 +15,17 @@ export async function GET(request: NextRequest) {
 
     let query: any = {};
 
-    if (viewMode === 'group' && groupId) {
-      query.groupId = groupId;
-    } else if (viewMode === 'individual' && profileId) {
-      query.profileId = profileId;
-    } else {
-      return NextResponse.json(
-        { error: "Profile ID or Group ID is required" },
-        { status: 400 }
-      );
+    // **FIXED LOGIC**: This now correctly builds the query based on the view mode.
+    if (viewMode === 'group') {
+      if (!groupId) {
+        return NextResponse.json({ error: "Group ID is required for group view" }, { status: 400 });
+      }
+      query = { groupId: new mongoose.Types.ObjectId(groupId) };
+    } else { // Defaults to 'individual' view
+      if (!profileId) {
+        return NextResponse.json({ error: "Profile ID is required for individual view" }, { status: 400 });
+      }
+      query = { profileId: new mongoose.Types.ObjectId(profileId) };
     }
 
     const transactions = await ProfileTransaction.find(query)
