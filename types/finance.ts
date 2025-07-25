@@ -1,10 +1,12 @@
 export interface Transaction {
   _id?: string;
   id?: string;
+  profileId: string; // ADDED
+  groupId: string;   // ADDED
   amount: number;
   date: string;
   description: string;
-  type: 'income' | 'expense' | 'settlement_paid' | 'settlement_received'; // UPDATED: Added new types
+  type: 'income' | 'expense' | 'settlement_paid' | 'settlement_received';
   category: string;
   createdAt?: string;
 }

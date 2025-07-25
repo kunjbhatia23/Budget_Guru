@@ -16,7 +16,7 @@ import { BudgetSetup } from '@/components/BudgetSetup';
 import { BudgetOverview } from '@/components/BudgetOverview';
 import { BudgetChart } from '@/components/BudgetChart';
 import { FinanceStats } from '@/components/FinanceStats';
-import { Sidebar } from '@/components/Sidebar';
+import { Sidebar } from '@/components/Sidebar'; // CORRECTED LINE: from instead of =>
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Transaction, Budget } from '@/types/finance';
@@ -63,7 +63,7 @@ export default function Home() {
     try {
       setLoading(true);
       setError(null);
-      setSplitData(null); // Clear split data before re-fetching
+      setSplitData(null);
 
       const [transactionsData, budgetsData] = await Promise.all([
         profileTransactionApi.getAll(profileId || undefined, groupId, viewMode.type),
@@ -112,17 +112,19 @@ export default function Home() {
     await loadProfileData();
   };
   
-  const handleAddTransaction = async (transaction: Transaction) => {
+  const handleAddTransaction = async (transactionOrTransactions: Transaction | Transaction[]) => {
     const groupId = getCurrentGroupId();
     let profileId: string | null = getCurrentProfileId();
 
-    if (isGroupView() && currentGroup) {
-      if (!profileId && currentGroup.profiles.length > 0) {
-        profileId = currentGroup.profiles[0]?._id || currentGroup.profiles[0]?.id || null;
-      }
+    if (!Array.isArray(transactionOrTransactions)) {
+        if (isGroupView() && currentGroup) {
+            if (!profileId && currentGroup.profiles.length > 0) {
+                profileId = currentGroup.profiles[0]?._id || currentGroup.profiles[0]?.id || null;
+            }
+        }
     }
     
-    if (!groupId || !profileId) {
+    if (!groupId || (Array.isArray(transactionOrTransactions) ? false : !profileId)) {
       toast({
         title: "Error",
         description: "Please select a profile/group first.",
@@ -132,24 +134,48 @@ export default function Home() {
     }
     
     try {
-      const profileTransaction: Omit<ProfileTransaction, "_id" | "createdAt"> = {
-        profileId, groupId,
-        amount: transaction.amount, date: transaction.date,
-        description: transaction.description, type: transaction.type,
-        category: transaction.category,
-      };
-      if (editingTransaction) {
-        await profileTransactionApi.update(editingTransaction.id!, profileTransaction);
+      if (Array.isArray(transactionOrTransactions)) {
+        await Promise.all(transactionOrTransactions.map(async (tx) => {
+            const profileTransaction: Omit<ProfileTransaction, "_id" | "createdAt"> = {
+                profileId: tx.profileId,
+                groupId: tx.groupId,
+                amount: tx.amount,
+                date: tx.date,
+                description: tx.description,
+                type: tx.type,
+                category: tx.category,
+            };
+            await profileTransactionApi.create(profileTransaction);
+        }));
         toast({
-          title: "Success",
-          description: "Transaction updated successfully.",
+            title: "Success",
+            description: "Group income distributed successfully.",
         });
       } else {
-        await profileTransactionApi.create(profileTransaction);
-        toast({
-          title: "Success",
-          description: "Transaction added successfully.",
-        });
+        const transaction = transactionOrTransactions;
+        const profileTransaction: Omit<ProfileTransaction, "_id" | "createdAt"> = {
+          profileId: profileId!,
+          groupId,
+          amount: transaction.amount,
+          date: transaction.date,
+          description: transaction.description,
+          type: transaction.type,
+          category: transaction.category,
+        };
+
+        if (editingTransaction) {
+          await profileTransactionApi.update(editingTransaction.id!, profileTransaction);
+          toast({
+            title: "Success",
+            description: "Transaction updated successfully.",
+          });
+        } else {
+          await profileTransactionApi.create(profileTransaction);
+          toast({
+            title: "Success",
+            description: "Transaction added successfully.",
+          });
+        }
       }
       await refreshData();
     } catch (err: any) {
