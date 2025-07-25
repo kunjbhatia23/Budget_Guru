@@ -17,7 +17,7 @@ import {
   Wallet,
   ChevronLeft,
   ChevronRight,
-  Scale, // Add the Scale icon
+  Scale,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -49,7 +49,8 @@ const navigationItems = [
     label: "Add Transaction",
     icon: Plus,
     description: "Record new entry",
-    highlight: true,
+    highlight: false, // Set highlight to false to remove the "New" badge
+    specialStyle: true, // Add a new property for persistent highlighting
   },
   {
     id: "transactions",
@@ -72,19 +73,19 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   return (
     <>
       {/* Mobile Menu Button */}
-     <Button
-      variant="outline"
-      size="sm"
-      className="fixed top-4 left-4 z-50 md:hidden shadow-lg bg-background/80 backdrop-blur-sm border border-border text-foreground hover:bg-accent"
-      onClick={() => setIsMobileOpen(!isMobileOpen)}
-      aria-label={isMobileOpen ? "Close menu" : "Open menu"}
-    >
-      {isMobileOpen ? (
-        <X className="h-5 w-5" />
-      ) : (
-        <Menu className="h-5 w-5" />
-      )}
-    </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        className="fixed top-4 left-4 z-50 md:hidden shadow-lg bg-background/80 backdrop-blur-sm border border-border text-foreground hover:bg-accent"
+        onClick={() => setIsMobileOpen(!isMobileOpen)}
+        aria-label={isMobileOpen ? "Close menu" : "Open menu"}
+      >
+        {isMobileOpen ? (
+          <X className="h-5 w-5" />
+        ) : (
+          <Menu className="h-5 w-5" />
+        )}
+      </Button>
 
       {/* Mobile Overlay */}
       {isMobileOpen && (
@@ -133,7 +134,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
                 </div>
               )}
             </div>
-            
+
             {/* Profile Switcher */}
             {!isCollapsed && (
               <div className="mt-4">
@@ -159,8 +160,8 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
                         "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/25",
                       !isActive &&
                         "hover:bg-accent hover:text-accent-foreground hover:scale-[1.02] hover:shadow-sm",
-                      item.highlight &&
-                        !isActive &&
+                      // Apply special style if not active and has specialStyle flag
+                      item.specialStyle && !isActive &&
                         "border border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/50"
                     )}
                     onClick={() => {
@@ -198,6 +199,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
                         </div>
                       </div>
                     )}
+                    {/* The Badge component will only render if item.highlight is true */}
                     {item.highlight && !isActive && !isCollapsed && (
                       <Badge
                         variant="secondary"
