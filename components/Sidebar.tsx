@@ -109,7 +109,16 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
         <div className="flex flex-col h-full overflow-hidden">
           {/* Header */}
           <div className="p-6 border-b border-border flex-shrink-0">
-            <div className="flex items-center gap-3">
+            <div
+              className="flex items-center gap-3 cursor-pointer"
+              onClick={() => {
+                onTabChange("overview");
+                setIsMobileOpen(false);
+              }}
+              role="button"
+              tabIndex={0}
+              aria-label="Go to Overview"
+            >
               <div className="p-3 bg-gradient-to-br from-blue-600 via-purple-600 to-blue-700 rounded-xl shadow-lg">
                 <Wallet className="h-6 w-6 text-white" />
               </div>
