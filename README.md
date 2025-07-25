@@ -141,6 +141,3 @@ npm start
 | ------------- | --------------------------- | -------- |
 | `MONGODB_URI` | MongoDB connection string.  | Yes      |
 | `NODE_ENV`    | Set to `production` for builds. | No       |
-
-```
-```
