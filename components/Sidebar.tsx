@@ -18,6 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Scale,
+  FileText, // ADDED: Import FileText icon
 } from "lucide-react";
 
 interface SidebarProps {
@@ -63,6 +64,13 @@ const navigationItems = [
     label: "Expense Split",
     icon: Scale,
     description: "Settle group debts",
+  },
+  // NEW: Add Financial Reports tab
+  {
+    id: "reports",
+    label: "Financial Reports",
+    icon: FileText, // Using FileText icon
+    description: "Generate monthly reports",
   },
 ];
 

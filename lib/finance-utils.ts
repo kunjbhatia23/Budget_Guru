@@ -1,18 +1,28 @@
+// Update file: lib/finance-utils.ts
 import { Transaction, MonthlyExpense, CategoryExpense, Budget, SpendingInsight } from '@/types/finance';
 import { VALIDATION_CONFIG, UI_CONFIG } from './constants';
 
-export const formatCurrency = (amount: number): string => {
+export function formatCurrency(amount: number, currencyCode: string = 'INR', locale: string = 'en-IN'): string {
   if (typeof amount !== 'number' || isNaN(amount)) {
-    return '$0.00';
+    return '';
   }
-  
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'INR',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
-};
+
+  const isNegative = amount < 0;
+  const absoluteAmount = Math.abs(amount);
+
+  try {
+    const formattedAmount = new Intl.NumberFormat(locale, {
+      style: 'decimal',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(absoluteAmount);
+
+    return isNegative ? `- Rs ${formattedAmount}` : `Rs ${formattedAmount}`;
+  } catch (error) {
+    console.error("Error formatting currency:", error);
+    return `${isNegative ? '-' : ''}Rs ${absoluteAmount.toFixed(2)}`;
+  }
+}
 
 export const formatDate = (dateString: string): string => {
   try {
@@ -232,7 +242,7 @@ export const validateTransaction = (amount: string, date: string, description: s
   } else {
     const selectedDate = new Date(date);
     const today = new Date();
-    today.setHours(23, 59, 59, 999); // End of today
+    today.setHours(23, 59, 59, 999);
     
     if (isNaN(selectedDate.getTime())) {
       errors.date = 'Please enter a valid date';
@@ -295,14 +305,12 @@ export const INCOME_CATEGORIES = [
   'Other'
 ] as const;
 
-// Utility function to safely parse numbers
 export const safeParseFloat = (value: string | number): number => {
   if (typeof value === 'number') return isNaN(value) ? 0 : value;
   const parsed = parseFloat(value);
   return isNaN(parsed) ? 0 : parsed;
 };
 
-// Utility function to safely format dates for input fields
 export const formatDateForInput = (date: Date | string): string => {
   try {
     const d = new Date(date);

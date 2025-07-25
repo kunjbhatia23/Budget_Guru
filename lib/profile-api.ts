@@ -1,3 +1,4 @@
+
 import {
   ProfileTransaction,
   ProfileBudget,
@@ -148,6 +149,21 @@ export const profileApi = {
     } catch (error) {
       console.error('Failed to record settlement:', error);
       throw new Error('Failed to record settlement. Please try again.');
+    }
+  },
+
+  // NEW FUNCTION
+  async getFinancialReport(params: { profileId?: string; groupId: string; month: string }): Promise<any> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params.profileId) queryParams.append('profileId', params.profileId);
+      queryParams.append('groupId', params.groupId);
+      queryParams.append('month', params.month);
+
+      return await apiRequest<any>(`/api/financial-reports?${queryParams.toString()}`);
+    } catch (error) {
+      console.error('Failed to fetch financial report:', error);
+      throw new Error('Failed to fetch financial report. Please try again.');
     }
   },
 };
