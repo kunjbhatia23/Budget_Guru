@@ -16,7 +16,7 @@ import { BudgetSetup } from '@/components/BudgetSetup';
 import { BudgetOverview } from '@/components/BudgetOverview';
 import { BudgetChart } from '@/components/BudgetChart';
 import { FinanceStats } from '@/components/FinanceStats';
-import { Sidebar } from '@/components/Sidebar'; // CORRECTED LINE: from instead of =>
+import { Sidebar } from '@/components/Sidebar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Transaction, Budget } from '@/types/finance';
@@ -27,6 +27,7 @@ import { ExpenseSplit } from '@/components/ExpenseSplit';
 import { useToast } from "@/hooks/use-toast";
 import { CreateProfileDialog } from '@/components/profile/create-profile-dialog';
 import { formatCurrency } from '@/lib/finance-utils';
+import { FinancialReports } from '@/components/FinancialReports';
 
 export default function Home() {
   const { toast } = useToast();
@@ -368,6 +369,7 @@ export default function Home() {
        case "split": return (
         <ExpenseSplit splitData={splitData} loading={loading} isGroupView={isGroupView()} onSettleUp={handleSettleUp} />
       );
+      case "reports": return <FinancialReports />;
       default: return null;
     }
   };
