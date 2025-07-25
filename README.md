@@ -30,7 +30,6 @@ A comprehensive personal finance management application built with Next.js, Type
 -   **PDF Generation**: jsPDF, jspdf-autotable
 -   **CSV/Excel Export**: `xlsx` (SheetJS)
 -   **Icons**: Lucide React
--   **Deployment**: Vercel (recommended)
 
 ## Getting Started
 
