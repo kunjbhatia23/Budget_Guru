@@ -3,11 +3,10 @@ import {
   ProfileBudget,
   UserGroup,
   Profile,
-  ExpenseSplitData // <-- This import was missing
+  ExpenseSplitData
 } from '@/types/profile';
 import { API_CONFIG } from './constants';
 
-// Enhanced error handling
 class ApiError extends Error {
   constructor(
     message: string,
@@ -19,7 +18,6 @@ class ApiError extends Error {
   }
 }
 
-// Generic API request handler
 async function apiRequest<T>(
   url: string,
   options: RequestInit = {}
@@ -39,7 +37,6 @@ async function apiRequest<T>(
 
     clearTimeout(timeoutId);
 
-    // For DELETE requests with no body
     if (response.status === 204 || response.headers.get('content-length') === '0') {
       const text = await response.text();
       if (!text) {
@@ -77,7 +74,6 @@ async function apiRequest<T>(
   }
 }
 
-// Profile API functions
 export const profileApi = {
   async getGroups(): Promise<UserGroup[]> {
     try {
@@ -142,9 +138,20 @@ export const profileApi = {
       throw new Error('Failed to calculate expense split. Please try again.');
     }
   },
+
+  async settleExpense(fromProfileId: string, toProfileId: string, groupId: string, amount: number): Promise<{ message: string }> {
+    try {
+      return await apiRequest<{ message: string }>('/api/settle-expense', {
+        method: 'POST',
+        body: JSON.stringify({ fromProfileId, toProfileId, groupId, amount }),
+      });
+    } catch (error) {
+      console.error('Failed to record settlement:', error);
+      throw new Error('Failed to record settlement. Please try again.');
+    }
+  },
 };
 
-// Profile Transaction API functions
 export const profileTransactionApi = {
   async getAll(profileId?: string, groupId?: string, viewMode: 'individual' | 'group' = 'individual'): Promise<ProfileTransaction[]> {
     try {
@@ -227,7 +234,6 @@ export const profileTransactionApi = {
   },
 };
 
-// Profile Budget API functions
 export const profileBudgetApi = {
   async getAll(profileId?: string, groupId?: string, viewMode: 'individual' | 'group' = 'individual'): Promise<ProfileBudget[]> {
     try {

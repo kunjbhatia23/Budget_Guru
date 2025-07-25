@@ -26,6 +26,7 @@ import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { ExpenseSplit } from '@/components/ExpenseSplit';
 import { useToast } from "@/hooks/use-toast";
 import { CreateProfileDialog } from '@/components/profile/create-profile-dialog';
+import { formatCurrency } from '@/lib/finance-utils';
 
 export default function Home() {
   const { toast } = useToast();
@@ -62,8 +63,8 @@ export default function Home() {
     try {
       setLoading(true);
       setError(null);
-      setSplitData(null);
-      
+      setSplitData(null); // Clear split data before re-fetching
+
       const [transactionsData, budgetsData] = await Promise.all([
         profileTransactionApi.getAll(profileId || undefined, groupId, viewMode.type),
         profileBudgetApi.getAll(profileId || undefined, groupId, viewMode.type)
@@ -113,15 +114,23 @@ export default function Home() {
   
   const handleAddTransaction = async (transaction: Transaction) => {
     const groupId = getCurrentGroupId();
-    let profileId = getCurrentProfileId();
+    let profileId: string | null = getCurrentProfileId();
 
     if (isGroupView() && currentGroup) {
-      profileId = currentGroup.profiles[0]?._id ?? profileId;
+      if (!profileId && currentGroup.profiles.length > 0) {
+        profileId = currentGroup.profiles[0]?._id || currentGroup.profiles[0]?.id || null;
+      }
     }
+    
     if (!groupId || !profileId) {
-      setError("Please select a profile first");
+      toast({
+        title: "Error",
+        description: "Please select a profile/group first.",
+        variant: "destructive",
+      });
       return;
     }
+    
     try {
       const profileTransaction: Omit<ProfileTransaction, "_id" | "createdAt"> = {
         profileId, groupId,
@@ -131,14 +140,25 @@ export default function Home() {
       };
       if (editingTransaction) {
         await profileTransactionApi.update(editingTransaction.id!, profileTransaction);
-        setEditingTransaction(undefined);
+        toast({
+          title: "Success",
+          description: "Transaction updated successfully.",
+        });
       } else {
         await profileTransactionApi.create(profileTransaction);
+        toast({
+          title: "Success",
+          description: "Transaction added successfully.",
+        });
       }
       await refreshData();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error saving transaction:", err);
-      setError("Failed to save transaction. Please try again.");
+      toast({
+        title: "Error",
+        description: err.message || "Failed to save transaction. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -151,9 +171,17 @@ export default function Home() {
     try {
       await profileTransactionApi.delete(id);
       await refreshData();
-    } catch (err) {
+      toast({
+        title: "Success",
+        description: "Transaction deleted successfully.",
+      });
+    } catch (err: any) {
       console.error("Error deleting transaction:", err);
-      setError("Failed to delete transaction. Please try again.");
+      toast({
+        title: "Error",
+        description: err.message || "Failed to delete transaction. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -166,7 +194,11 @@ export default function Home() {
     const groupId = getCurrentGroupId();
     const profileId = getCurrentProfileId();
     if (!groupId || !profileId) {
-      setError("Please select a profile first");
+      toast({
+        title: "Error",
+        description: "Please select a profile/group first.",
+        variant: "destructive",
+      });
       return;
     }
     try {
@@ -175,9 +207,44 @@ export default function Home() {
       }));
       await profileBudgetApi.saveAll(profileId, groupId, profileBudgets);
       await refreshData();
-    } catch (err) {
+      toast({
+        title: "Success",
+        description: "Budgets saved successfully.",
+      });
+    } catch (err: any) {
       console.error("Error saving budgets:", err);
-      setError("Failed to save budgets. Please try again.");
+      toast({
+        title: "Error",
+        description: err.message || "Failed to save budgets. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSettleUp = async (fromProfileId: string, toProfileId: string, amount: number) => {
+    const groupId = getCurrentGroupId();
+    if (!groupId) {
+      toast({
+        title: "Error",
+        description: "Group context missing for settlement.",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      await profileApi.settleExpense(fromProfileId, toProfileId, groupId, amount);
+      toast({
+        title: "Success",
+        description: `Settlement recorded: ${formatCurrency(amount)} paid.`,
+      });
+      await refreshData();
+    } catch (err: any) {
+      console.error("Error recording settlement:", err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to record settlement. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -273,7 +340,7 @@ export default function Home() {
         />
       );
        case "split": return (
-        <ExpenseSplit splitData={splitData} loading={loading} isGroupView={isGroupView()} />
+        <ExpenseSplit splitData={splitData} loading={loading} isGroupView={isGroupView()} onSettleUp={handleSettleUp} />
       );
       default: return null;
     }

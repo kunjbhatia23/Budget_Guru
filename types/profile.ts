@@ -24,7 +24,7 @@ export interface ProfileTransaction {
   amount: number;
   date: string;
   description: string;
-  type: 'income' | 'expense';
+  type: 'income' | 'expense' | 'settlement_paid' | 'settlement_received'; // ADDED NEW TYPES
   category: string;
   createdAt?: string;
 }
@@ -48,7 +48,6 @@ export interface ViewMode {
   groupId: string;
 }
 
-// New Types for Expense Splitting
 export interface Balance {
   profileId: string;
   name: string;

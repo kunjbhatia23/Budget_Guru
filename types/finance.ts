@@ -4,7 +4,7 @@ export interface Transaction {
   amount: number;
   date: string;
   description: string;
-  type: 'income' | 'expense';
+  type: 'income' | 'expense' | 'settlement_paid' | 'settlement_received'; // UPDATED: Added new types
   category: string;
   createdAt?: string;
 }

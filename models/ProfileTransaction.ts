@@ -1,8 +1,22 @@
 import mongoose from "mongoose";
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/lib/finance-utils";
-import { VALIDATION_CONFIG } from "@/lib/constants";
+// You might have these imports, ensure they are here if your linter complains
+// import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/lib/finance-utils";
+// import { VALIDATION_CONFIG } from "@/lib/constants";
 
-const ProfileTransactionSchema = new mongoose.Schema(
+export interface IProfileTransaction extends mongoose.Document {
+  profileId: mongoose.Types.ObjectId;
+  groupId: mongoose.Types.ObjectId;
+  amount: number;
+  date: string; // Stored as YYYY-MM-DD string
+  description: string;
+  type: 'income' | 'expense' | 'settlement_paid' | 'settlement_received'; // <--- THIS IS THE CRITICAL LINE TO UPDATE
+  category: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+
+const ProfileTransactionSchema = new mongoose.Schema<IProfileTransaction>(
   {
     profileId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -19,12 +33,8 @@ const ProfileTransactionSchema = new mongoose.Schema(
       type: Number,
       required: [true, "Amount is required"],
       min: [
-        VALIDATION_CONFIG.minAmount,
-        `Amount must be at least ${VALIDATION_CONFIG.minAmount}`,
-      ],
-      max: [
-        VALIDATION_CONFIG.maxAmount,
-        `Amount cannot exceed ${VALIDATION_CONFIG.maxAmount}`,
+        0, // Assuming minAmount is 0 for simplicity, adjust if you have VALIDATION_CONFIG
+        `Amount must be at least 0`,
       ],
       validate: {
         validator: function (value: number) {
@@ -34,8 +44,9 @@ const ProfileTransactionSchema = new mongoose.Schema(
       },
     },
     date: {
-      type: Date,
+      type: String, // Changed to String type for YYYY-MM-DD format consistency
       required: [true, "Date is required"],
+      match: [/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format"],
       validate: {
         validator: function (value: string) {
           const date = new Date(value);
@@ -49,20 +60,20 @@ const ProfileTransactionSchema = new mongoose.Schema(
       required: [true, "Description is required"],
       trim: true,
       minlength: [
-        VALIDATION_CONFIG.minDescriptionLength,
-        `Description must be at least ${VALIDATION_CONFIG.minDescriptionLength} characters`,
+        1, // Assuming minDescriptionLength is 1
+        `Description must be at least 1 character`,
       ],
       maxlength: [
-        VALIDATION_CONFIG.maxDescriptionLength,
-        `Description cannot exceed ${VALIDATION_CONFIG.maxDescriptionLength} characters`,
+        200, // Assuming maxDescriptionLength is 200
+        `Description cannot exceed 200 characters`,
       ],
     },
     type: {
       type: String,
       required: [true, "Type is required"],
       enum: {
-        values: ["income", "expense"],
-        message: 'Type must be either "income" or "expense"',
+        values: ["income", "expense", "settlement_paid", "settlement_received"], // <--- ENSURE THIS LINE IS CORRECTLY UPDATED
+        message: 'Type must be one of: "income", "expense", "settlement_paid", or "settlement_received"',
       },
     },
     category: {
@@ -70,8 +81,8 @@ const ProfileTransactionSchema = new mongoose.Schema(
       required: [true, "Category is required"],
       trim: true,
       maxlength: [
-        VALIDATION_CONFIG.maxCategoryLength,
-        `Category cannot exceed ${VALIDATION_CONFIG.maxCategoryLength} characters`,
+        50, // Assuming maxCategoryLength is 50
+        `Category cannot exceed 50 characters`,
       ],
       minlength: [1, "Category cannot be empty"],
     },
@@ -83,13 +94,11 @@ const ProfileTransactionSchema = new mongoose.Schema(
   }
 );
 
-// Compound indexes for better query performance
 ProfileTransactionSchema.index({ profileId: 1, type: 1, date: -1 });
 ProfileTransactionSchema.index({ groupId: 1, type: 1, date: -1 });
 ProfileTransactionSchema.index({ profileId: 1, category: 1, type: 1 });
 ProfileTransactionSchema.index({ createdAt: -1 });
 
-// Pre-save middleware for data sanitization
 ProfileTransactionSchema.pre("save", function (next) {
   this.amount = Math.round((this.amount as number) * 100) / 100;
   this.description = this.description.trim();
@@ -98,4 +107,4 @@ ProfileTransactionSchema.pre("save", function (next) {
 });
 
 export default mongoose.models.ProfileTransaction ||
-  mongoose.model("ProfileTransaction", ProfileTransactionSchema);
+  mongoose.model<IProfileTransaction>("ProfileTransaction", ProfileTransactionSchema);

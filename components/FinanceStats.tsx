@@ -20,58 +20,65 @@ interface FinanceStatsProps {
 }
 
 export function FinanceStats({ transactions, isGroupView }: FinanceStatsProps) {
-  const totalIncome = transactions
-    .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const totalExpenses = transactions
-    .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const balance = totalIncome - totalExpenses;
-
   const currentMonth = new Date().toISOString().slice(0, 7);
   const thisMonthTransactions = transactions.filter(t => t.date.startsWith(currentMonth));
-  const thisMonthIncome = thisMonthTransactions
+
+  // --- Calculations for Monthly Income/Expenses (Actual Budgeting Categories) ---
+  // These should *not* include settlement transactions, as they represent actual income/spending for budgeting.
+  const actualMonthlyIncome = thisMonthTransactions
     .filter(t => t.type === 'income')
     .reduce((sum, t) => sum + t.amount, 0);
-  const thisMonthExpenses = thisMonthTransactions
+
+  const actualMonthlyExpenses = thisMonthTransactions
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0);
 
-  const savingsRate = thisMonthIncome > 0
-    ? ((thisMonthIncome - thisMonthExpenses) / thisMonthIncome) * 100
+  // --- Calculations for Overall Total Balance (All Cash Movements) ---
+  // This *should* include settlement transactions to reflect net cash position.
+  const totalCashInflow = transactions
+    .filter(t => t.type === 'income' || t.type === 'settlement_received')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const totalCashOutflow = transactions
+    .filter(t => t.type === 'expense' || t.type === 'settlement_paid')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const netOverallBalance = totalCashInflow - totalCashOutflow;
+
+  // --- Savings Rate calculation ---
+  const savingsRate = actualMonthlyIncome > 0
+    ? ((actualMonthlyIncome - actualMonthlyExpenses) / actualMonthlyIncome) * 100
     : 0;
 
   let stats = [
     {
       title: 'Total Balance',
-      value: formatCurrency(balance),
+      value: formatCurrency(netOverallBalance), // Use netOverallBalance here
       icon: DollarSign,
-      color: balance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400',
-      bgColor: balance >= 0 ? 'bg-green-50 dark:bg-green-900/50' : 'bg-red-50 dark:bg-red-900/50',
-      borderColor: balance >= 0 ? 'border-green-200 dark:border-green-700' : 'border-red-200 dark:border-red-700',
-      description: 'Net financial position',
-      trend: balance >= 0 ? 'positive' : 'negative',
+      color: netOverallBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400',
+      bgColor: netOverallBalance >= 0 ? 'bg-green-50 dark:bg-green-900/50' : 'bg-red-50 dark:bg-red-900/50',
+      borderColor: netOverallBalance >= 0 ? 'border-green-200 dark:border-green-700' : 'border-red-200 dark:border-red-700',
+      description: 'Net financial position across all types',
+      trend: netOverallBalance >= 0 ? 'positive' : 'negative',
     },
     {
       title: 'Monthly Income',
-      value: formatCurrency(thisMonthIncome),
+      value: formatCurrency(actualMonthlyIncome), // Use actualMonthlyIncome
       icon: TrendingUp,
       color: 'text-green-600 dark:text-green-400',
       bgColor: 'bg-green-50 dark:bg-green-900/50',
       borderColor: 'border-green-200 dark:border-green-700',
-      description: 'This month',
+      description: 'This month (excluding settlements)',
       trend: 'positive',
     },
     {
       title: 'Monthly Expenses',
-      value: formatCurrency(thisMonthExpenses),
+      value: formatCurrency(actualMonthlyExpenses), // Use actualMonthlyExpenses
       icon: TrendingDown,
       color: 'text-red-600 dark:text-red-400',
       bgColor: 'bg-red-50 dark:bg-red-900/50',
       borderColor: 'border-red-200 dark:border-red-700',
-      description: 'This month',
+      description: 'This month (excluding settlements)',
       trend: 'negative',
     },
     {
@@ -103,7 +110,10 @@ export function FinanceStats({ transactions, isGroupView }: FinanceStatsProps) {
   ];
 
   if (isGroupView) {
+    // In group view, income and savings rate are typically not relevant per profile
     stats = stats.filter(stat => stat.title !== 'Monthly Income' && stat.title !== 'Savings Rate');
+    // Adjust description for Total Balance in group view if needed
+    stats = stats.map(stat => stat.title === 'Total Balance' ? { ...stat, description: 'Net balance including settlements' } : stat);
   }
 
   return (
@@ -125,7 +135,7 @@ export function FinanceStats({ transactions, isGroupView }: FinanceStatsProps) {
               <CardTitle className="text-sm font-medium text-muted-foreground dark:text-zinc-300">
                 {stat.title}
               </CardTitle>
-              {stat.badge && !isGroupView && (
+              {stat.badge && !isGroupView && ( // Savings rate badge only in individual view
                 <Badge
                   variant={stat.trend === 'positive' ? 'default' : stat.trend === 'neutral' ? 'secondary' : 'destructive'}
                   className="text-xs"

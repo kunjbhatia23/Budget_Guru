@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
         { $match: { 
             profileId: new mongoose.Types.ObjectId(profileId),
             type: "expense",
-            date: { $gte: firstDayOfMonth, $lte: lastDayOfMonth }
+            date: { $gte: firstDayOfMonth.toISOString().slice(0, 10), $lte: lastDayOfMonth.toISOString().slice(0, 10) } // Match string dates
         }},
         { $group: { _id: "$category", spent: { $sum: "$amount" }}},
       ]);
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
         { $match: {
             groupId: groupObjectId,
             type: 'expense',
-            date: { $gte: firstDayOfMonth, $lte: lastDayOfMonth }
+            date: { $gte: firstDayOfMonth.toISOString().slice(0, 10), $lte: lastDayOfMonth.toISOString().slice(0, 10) } // Match string dates
         }},
         { $group: {
             _id: '$category',

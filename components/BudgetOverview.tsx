@@ -46,6 +46,7 @@ export function BudgetOverview({ budgets }: BudgetOverviewProps) {
     );
   }
 
+  // This function now uses the already calculated percentage from the budget object
   const getBudgetStatus = (percentage: number) => {
     if (percentage >= 100)
       return { color: 'destructive', icon: AlertTriangle, text: 'Over Budget' };
@@ -55,7 +56,7 @@ export function BudgetOverview({ budgets }: BudgetOverviewProps) {
   };
 
   const totalBudget = budgets.reduce((sum, b) => sum + b.amount, 0);
-  const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0);
+  const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0); // Use spent directly from budget object
   const overallPercentage = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
 
   return (
@@ -110,6 +111,7 @@ export function BudgetOverview({ budgets }: BudgetOverviewProps) {
           {/* Individual Budgets */}
           <div className="space-y-4">
             {budgets.map((budget) => {
+              // Directly use values from the budget object, which are calculated by the API
               const status = getBudgetStatus(budget.percentage);
               const StatusIcon = status.icon;
 

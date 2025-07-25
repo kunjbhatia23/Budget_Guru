@@ -36,7 +36,7 @@ export function BudgetChart({ budgets }: BudgetChartProps) {
         : budget.category,
     fullCategory: budget.category,
     budget: budget.amount,
-    spent: budget.spent,
+    spent: budget.spent, // Uses spent directly from the budget prop
     remaining: budget.amount - budget.spent
   }));
 

@@ -2,17 +2,22 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { ExpenseSplitData } from '@/types/profile';
+import { ExpenseSplitData, Profile } from '@/types/profile';
 import { formatCurrency } from '@/lib/finance-utils';
-import { Scale, ArrowRight, Users } from 'lucide-react';
+import { Scale, ArrowRight, Users, CheckCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useProfileStore } from '@/store/profile-store';
 
 interface ExpenseSplitProps {
   splitData: ExpenseSplitData | null;
   loading: boolean;
   isGroupView: boolean;
+  onSettleUp: (fromProfileId: string, toProfileId: string, amount: number) => Promise<void>;
 }
 
-export function ExpenseSplit({ splitData, loading, isGroupView }: ExpenseSplitProps) {
+export function ExpenseSplit({ splitData, loading, isGroupView, onSettleUp }: ExpenseSplitProps) {
+  const { currentGroup } = useProfileStore();
+
   if (!isGroupView) {
     return (
        <Card className="w-full max-w-6xl mx-auto">
@@ -69,6 +74,23 @@ export function ExpenseSplit({ splitData, loading, isGroupView }: ExpenseSplitPr
   }
 
   const { totalExpense, perPersonShare, balances, settlements } = splitData;
+
+  const getProfileIdFromName = (name: string): string | undefined => {
+    return currentGroup?.profiles.find((p: Profile) => p.name === name)?._id;
+  };
+
+  const handleSettleUpClick = async (fromName: string, toName: string, amount: number) => {
+    const fromProfileId = getProfileIdFromName(fromName);
+    const toProfileId = getProfileIdFromName(toName);
+    const groupId = currentGroup?._id;
+
+    if (fromProfileId && toProfileId && groupId) {
+      await onSettleUp(fromProfileId, toProfileId, amount);
+    } else {
+      console.error("Could not find profile IDs or group ID for settlement.");
+      // Optionally show a toast error here if onSettleUp doesn't handle it
+    }
+  };
 
   return (
     <div className="space-y-8 w-full max-w-6xl mx-auto">
@@ -131,14 +153,22 @@ export function ExpenseSplit({ splitData, loading, isGroupView }: ExpenseSplitPr
           ) : (
             <div className="space-y-4">
               {settlements.map((s, index) => (
-                <div key={index} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                  <span className="font-medium text-red-500">{s.from}</span>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <ArrowRight className="h-4 w-4" />
+                <div key={index} className="flex flex-col md:flex-row items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-2 mb-2 md:mb-0">
+                    <span className="font-medium text-red-500">{s.from}</span>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
                     <span className="font-bold text-lg text-primary">{formatCurrency(s.amount)}</span>
-                    <ArrowRight className="h-4 w-4" />
+                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium text-green-500">{s.to}</span>
                   </div>
-                  <span className="font-medium text-green-500">{s.to}</span>
+                  <Button
+                    onClick={() => handleSettleUpClick(s.from, s.to, s.amount)}
+                    size="sm"
+                    className="flex items-center gap-1"
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    Settle Up
+                  </Button>
                 </div>
               ))}
             </div>
