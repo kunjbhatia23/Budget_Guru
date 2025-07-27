@@ -48,6 +48,12 @@ const navigationItems = [
     description: "Budget management",
   },
   {
+    id: "assets",
+    label: "Assets",
+    icon: AssetIcon,
+    description: "Track your net worth",
+  },
+  {
     id: "add",
     label: "Add Transaction",
     icon: Plus,
@@ -63,15 +69,9 @@ const navigationItems = [
   },
   {
     id: "recurring",
-    label: "Recurring",
+    label: "Recurring Transactions",
     icon: Repeat,
     description: "Manage automatic transactions",
-  },
-  {
-    id: "assets",
-    label: "Assets",
-    icon: AssetIcon,
-    description: "Track your net worth",
   },
   {
     id: "split",
