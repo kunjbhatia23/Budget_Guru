@@ -1,3 +1,5 @@
+import mongoose from 'mongoose';
+
 export interface Profile {
   _id?: string;
   id?: string;
@@ -21,12 +23,17 @@ export interface ProfileTransaction {
   id?: string;
   profileId: string;
   groupId: string;
+  assetId?: string;
   amount: number;
   date: string;
   description: string;
-  type: 'income' | 'expense' | 'settlement_paid' | 'settlement_received'; // ADDED NEW TYPES
+  type: 'income' | 'expense' | 'settlement_paid' | 'settlement_received';
   category: string;
+  isRecurring?: boolean;
+  recurringFrequency?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  recurringDayOfMonth?: number;
   createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface ProfileBudget {
