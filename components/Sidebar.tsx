@@ -19,6 +19,7 @@ import {
   ChevronRight,
   Scale,
   FileText, // ADDED: Import FileText icon
+  Repeat, // Import Repeat icon
 } from "lucide-react";
 
 interface SidebarProps {
@@ -57,7 +58,13 @@ const navigationItems = [
     id: "transactions",
     label: "History",
     icon: List,
-    description: "All transactions",
+    description: "View all transactions",
+  },
+    {
+    id: "recurring",
+    label: "Recurring",
+    icon: Repeat,
+    description: "Manage automatic transactions",
   },
   {
     id: "split",
