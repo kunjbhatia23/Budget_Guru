@@ -14,7 +14,7 @@ class ApiError extends Error {
 }
 
 // Generic API request handler with retry logic
-async function apiRequest<T>(
+export async function apiRequest<T>(
   url: string,
   options: RequestInit = {}
 ): Promise<T> {
@@ -42,7 +42,10 @@ async function apiRequest<T>(
       );
     }
 
-    return await response.json();
+    // Handle cases where the response body might be empty (e.g., for a DELETE request)
+    const text = await response.text();
+    return text ? JSON.parse(text) : ({} as T);
+
   } catch (error) {
     clearTimeout(timeoutId);
 

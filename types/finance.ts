@@ -1,15 +1,34 @@
+export interface Asset {
+  _id: string;
+  id: string;
+  name: string;
+  type: 'Vehicle' | 'Property' | 'Electronics' | 'Investment' | 'Other';
+  initialValue: number;
+  currentValue: number;
+  purchaseDate: string; // ISO String
+  depreciationRate: number;
+  totalExpenses?: number; // This will be calculated on the frontend
+}
+
 export interface Transaction {
   _id?: string;
   id?: string;
-  profileId: string; // ADDED
-  groupId: string;   // ADDED
+  profileId: string;
+  groupId: string;
+  assetId?: string; // For linking expenses to assets
   amount: number;
   date: string;
   description: string;
   type: 'income' | 'expense' | 'settlement_paid' | 'settlement_received';
   category: string;
   createdAt?: string;
+  isRecurring?: boolean;
+  recurringFrequency?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  recurringDayOfMonth?: number;
 }
+
+// This is the new type that was missing from the export
+export type TransactionFormData = Omit<Transaction, 'id' | '_id' | 'profileId' | 'groupId' | 'createdAt'>;
 
 export interface MonthlyExpense {
   month: string;

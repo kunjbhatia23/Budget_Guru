@@ -1,20 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import ProfileTransaction from "@/models/ProfileTransaction";
+import mongoose from "mongoose";
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> {
   const { id } = params;
   try {
     await dbConnect();
     const body = await request.json();
+
+    // Prepare the update object, unsetting assetId if it's null or an empty string
+    const updateData: { [key: string]: any } = { ...body };
+    if (body.assetId) {
+        updateData.assetId = new mongoose.Types.ObjectId(body.assetId);
+    } else {
+        // If assetId is missing or null, ensure it's removed from the document
+        updateData.$unset = { assetId: 1 };
+    }
+
     const updatedTransaction = await ProfileTransaction.findByIdAndUpdate(
       id,
-      body,
-      { new: true }
+      updateData,
+      { new: true, runValidators: true }
     );
+
     if (!updatedTransaction) {
       return NextResponse.json(
         { error: "Transaction not found" },
@@ -34,7 +46,7 @@ export async function PUT(
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> {
   const { id } = params;
   try {
     await dbConnect();

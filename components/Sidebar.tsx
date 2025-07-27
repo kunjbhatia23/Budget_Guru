@@ -18,8 +18,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Scale,
-  FileText, // ADDED: Import FileText icon
-  Repeat, // Import Repeat icon
+  FileText,
+  Repeat,
+  Landmark as AssetIcon, // Icon for Assets
 } from "lucide-react";
 
 interface SidebarProps {
@@ -51,8 +52,8 @@ const navigationItems = [
     label: "Add Transaction",
     icon: Plus,
     description: "Record new entry",
-    highlight: false, // Set highlight to false to remove the "New" badge
-    specialStyle: true, // Add a new property for persistent highlighting
+    highlight: false,
+    specialStyle: true,
   },
   {
     id: "transactions",
@@ -60,11 +61,17 @@ const navigationItems = [
     icon: List,
     description: "View all transactions",
   },
-    {
+  {
     id: "recurring",
     label: "Recurring",
     icon: Repeat,
     description: "Manage automatic transactions",
+  },
+  {
+    id: "assets",
+    label: "Assets",
+    icon: AssetIcon,
+    description: "Track your net worth",
   },
   {
     id: "split",
@@ -72,11 +79,10 @@ const navigationItems = [
     icon: Scale,
     description: "Settle group debts",
   },
-  // NEW: Add Financial Reports tab
   {
     id: "reports",
     label: "Financial Reports",
-    icon: FileText, // Using FileText icon
+    icon: FileText,
     description: "Generate monthly reports",
   },
 ];
@@ -135,12 +141,12 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
               tabIndex={0}
               aria-label="Go to Overview"
             >
-              <div className="p-3 bg-gradient-to-br from-blue-600 via-purple-600 to-blue-700 rounded-xl shadow-lg">
+              <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl shadow-lg">
                 <Wallet className="h-6 w-6 text-white" />
               </div>
               {!isCollapsed && (
                 <div className="flex-1">
-                  <h1 className="font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  <h1 className="font-bold text-xl bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent">
                     Budget Guru
                   </h1>
                   <p className="text-xs text-muted-foreground font-medium">
@@ -172,12 +178,12 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
                       "w-full justify-start gap-3 h-12 transition-all duration-200 group relative overflow-hidden",
                       isCollapsed ? "px-3" : "px-4",
                       isActive &&
-                        "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/25",
+                        "bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg shadow-purple-500/25",
                       !isActive &&
                         "hover:bg-accent hover:text-accent-foreground hover:scale-[1.02] hover:shadow-sm",
                       // Apply special style if not active and has specialStyle flag
                       item.specialStyle && !isActive &&
-                        "border border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/50"
+                        "border border-purple-200 bg-purple-50/50 dark:border-purple-800 dark:bg-purple-950/50"
                     )}
                     onClick={() => {
                       onTabChange(item.id);
@@ -214,11 +220,10 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
                         </div>
                       </div>
                     )}
-                    {/* The Badge component will only render if item.highlight is true */}
-                    {item.highlight && !isActive && !isCollapsed && (
+                    {item.highlight && !isCollapsed && (
                       <Badge
                         variant="secondary"
-                        className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
+                        className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300"
                       >
                         New
                       </Badge>
@@ -227,7 +232,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
 
                   {/* Active indicator */}
                   {isActive && (
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-r-full shadow-sm" />
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-br from-purple-600 to-purple-700 rounded-r-full shadow-sm" />
                   )}
                 </div>
               );

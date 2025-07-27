@@ -14,6 +14,9 @@ import {
   profileBudgetApi,
 } from '@/lib/profile-api';
 import {
+  assetApi
+} from '@/lib/asset-api';
+import {
   ViewModeToggle
 } from '@/components/profile/view-mode-toggle';
 import {
@@ -52,7 +55,8 @@ import {
 } from '@/components/ui/button';
 import {
   Transaction,
-  Budget
+  Budget,
+  Asset
 } from '@/types/finance';
 import {
   ProfileTransaction,
@@ -62,7 +66,8 @@ import {
 import {
   Loader2,
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  Plus
 } from 'lucide-react';
 import {
   ThemeToggle
@@ -85,6 +90,12 @@ import {
 import {
   RecurringTransactionForm
 } from '@/components/RecurringTransactionForm';
+import {
+  AssetList
+} from '@/components/AssetList';
+import {
+  AssetForm
+} from '@/components/AssetForm';
 
 
 export default function Home() {
@@ -104,13 +115,21 @@ export default function Home() {
 
   const [transactions, setTransactions] = useState < Transaction[] > ([]);
   const [budgets, setBudgets] = useState < Budget[] > ([]);
-  const [editingTransaction, setEditingTransaction] = useState <
-    Transaction | undefined
-  > ();
+  const [assets, setAssets] = useState < Asset[] > ([]);
+  const [editingTransaction, setEditingTransaction] = useState < Transaction | undefined > ();
+  const [editingAsset, setEditingAsset] = useState < Asset | undefined > ();
   const [activeTab, setActiveTab] = useState("overview");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState < string | null > (null);
   const [splitData, setSplitData] = useState < ExpenseSplitData | null > (null);
+  const [showAssetForm, setShowAssetForm] = useState(false);
+  
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
 
   const loadProfileData = useCallback(async () => {
     const groupId = getCurrentGroupId();
@@ -126,9 +145,10 @@ export default function Home() {
       setError(null);
       setSplitData(null);
 
-      const [transactionsData, budgetsData] = await Promise.all([
+      const [transactionsData, budgetsData, assetsData] = await Promise.all([
         profileTransactionApi.getAll(profileId || undefined, groupId, viewMode.type),
-        profileBudgetApi.getAll(profileId || undefined, groupId, viewMode.type)
+        profileBudgetApi.getAll(profileId || undefined, groupId, viewMode.type),
+        assetApi.getAll(profileId || undefined, groupId, viewMode.type)
       ]);
 
       if (viewMode.type === 'group') {
@@ -136,15 +156,19 @@ export default function Home() {
         setSplitData(splitResult);
       }
 
-      setTransactions(transactionsData.map((t: ProfileTransaction) => ({ ...t,
-        id: t._id || t.id
+      setTransactions(transactionsData.map((t: any) => ({ ...t,
+        id: t._id
       })));
-      setBudgets(budgetsData.map((b: ProfileBudget) => ({ ...b,
-        id: b._id || b.id
+      setBudgets(budgetsData.map((b: any) => ({ ...b,
+        id: b._id
       })));
+      setAssets(assetsData.map((a: any) => ({ ...a,
+        id: a._id
+      })));
+
     } catch (err: any) {
       console.error('Error loading profile data:', err);
-      setError(err.message || 'Failed to load profile data. Please check your connection and try again.');
+      setError(err.message || 'Failed to load profile data.');
     } finally {
       setLoading(false);
     }
@@ -154,106 +178,51 @@ export default function Home() {
     const loadInitialData = async () => {
       try {
         setLoading(true);
-        setError(null);
         const groupsData = await profileApi.getGroups();
         setGroups(groupsData);
       } catch (err: any) {
-        console.error("Error loading initial data:", err);
-        setError(err.message || "Failed to load data. Please check your connection and try again.");
+        setError(err.message || "Failed to load initial data.");
       } finally {
         setLoading(false);
       }
     };
-    loadInitialData();
-  }, [setGroups]);
+    if (isClient) {
+        loadInitialData();
+    }
+  }, [setGroups, isClient]);
 
   useEffect(() => {
-    if (groups.length > 0) {
+    if (groups.length > 0 && isClient) {
       loadProfileData();
     }
-  }, [groups, currentGroup, currentProfile, viewMode, loadProfileData]);
+  }, [groups, currentGroup, currentProfile, viewMode, loadProfileData, isClient]);
 
   const refreshData = async () => {
     await loadProfileData();
   };
 
   const handleAddTransaction = async (transactionOrTransactions: Transaction | Transaction[]) => {
-    const groupId = getCurrentGroupId();
-    let profileId: string | null = getCurrentProfileId();
-
-    if (!Array.isArray(transactionOrTransactions)) {
-      if (isGroupView() && currentGroup) {
-        if (!profileId && currentGroup.profiles.length > 0) {
-          profileId = currentGroup.profiles[0]?._id || null;
-        }
-      }
-    }
-
-    if (!groupId || (Array.isArray(transactionOrTransactions) ? false : !profileId)) {
-      toast({
-        title: "Error",
-        description: "Please select a profile/group first.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
-      if (Array.isArray(transactionOrTransactions)) {
-        await Promise.all(transactionOrTransactions.map(async (tx) => {
-          const profileTransaction = {
-            profileId: tx.profileId!,
-            groupId: tx.groupId!,
-            amount: tx.amount,
-            date: tx.date,
-            description: tx.description,
-            type: tx.type,
-            category: tx.category,
-            isRecurring: false
-          };
-          await profileTransactionApi.create(profileTransaction);
-        }));
-        toast({
-          title: "Success",
-          description: "Group income distributed successfully.",
-        });
-      } else {
-        const transaction = transactionOrTransactions;
-        const profileTransaction = {
-          profileId: profileId!,
-          groupId: groupId,
-          amount: transaction.amount,
-          date: transaction.date,
-          description: transaction.description,
-          type: transaction.type,
-          category: transaction.category,
-          isRecurring: false
-        };
-
-        if (editingTransaction) {
-          await profileTransactionApi.update(editingTransaction.id!, profileTransaction);
-          toast({
-            title: "Success",
-            description: "Transaction updated successfully.",
-          });
+        if (Array.isArray(transactionOrTransactions)) {
+            await Promise.all(transactionOrTransactions.map(tx => profileTransactionApi.create(tx as ProfileTransaction)));
+            toast({ title: "Success", description: "Group income distributed." });
         } else {
-          await profileTransactionApi.create(profileTransaction as any);
-          toast({
-            title: "Success",
-            description: "Transaction added successfully.",
-          });
+            const transaction = transactionOrTransactions;
+            if (editingTransaction) {
+                await profileTransactionApi.update(editingTransaction.id!, transaction as ProfileTransaction);
+                toast({ title: "Success", description: "Transaction updated." });
+            } else {
+                await profileTransactionApi.create(transaction as ProfileTransaction);
+                toast({ title: "Success", description: "Transaction added." });
+            }
         }
-      }
-      await refreshData();
+        await refreshData();
+        setEditingTransaction(undefined);
+        setActiveTab('transactions');
     } catch (err: any) {
-      console.error("Error saving transaction:", err);
-      toast({
-        title: "Error",
-        description: err.message || "Failed to save transaction. Please try again.",
-        variant: "destructive",
-      });
+        toast({ title: "Error", description: err.message, variant: "destructive" });
     }
-  };
+};
 
   const handleEditTransaction = (transaction: Transaction) => {
     setEditingTransaction(transaction);
@@ -263,54 +232,76 @@ export default function Home() {
   const handleDeleteTransaction = async (id: string) => {
     try {
       await profileTransactionApi.delete(id);
-      await refreshData();
       toast({
         title: "Success",
-        description: "Transaction deleted successfully.",
+        description: "Transaction deleted."
       });
+      await refreshData();
     } catch (err: any) {
-      console.error("Error deleting transaction:", err);
       toast({
         title: "Error",
-        description: err.message || "Failed to delete transaction. Please try again.",
-        variant: "destructive",
+        description: err.message,
+        variant: "destructive"
       });
     }
   };
 
   const handleCancelEdit = () => {
     setEditingTransaction(undefined);
-    setActiveTab("overview");
+    setActiveTab("transactions");
   };
 
-  const handleSaveBudgets = async (newBudgets: Omit < Budget, "id" | "spent" | "remaining" | "percentage" > []) => {
+  const handleEditAsset = (asset: Asset) => {
+    setEditingAsset(asset);
+    setShowAssetForm(true);
+  };
+
+  const handleDeleteAsset = async (id: string) => {
+    try {
+      await assetApi.delete(id);
+      toast({
+        title: "Success",
+        description: "Asset deleted successfully."
+      });
+      await refreshData();
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSaveAsset = () => {
+    setShowAssetForm(false);
+    setEditingAsset(undefined);
+    refreshData();
+  };
+
+  const handleSaveBudgets = async (newBudgets: Omit < Budget, "id" | "_id" | "spent" | "remaining" | "percentage" > []) => {
     const groupId = getCurrentGroupId();
     const profileId = getCurrentProfileId();
     if (!groupId || !profileId) {
       toast({
         title: "Error",
-        description: "Please select a profile/group first.",
-        variant: "destructive",
+        description: "A profile and group must be selected.",
+        variant: "destructive"
       });
       return;
     }
     try {
-      const profileBudgets = newBudgets.map((budget) => ({
-        category: budget.category,
-        amount: budget.amount,
-      }));
-      await profileBudgetApi.saveAll(profileId, groupId, profileBudgets);
-      await refreshData();
+      await profileBudgetApi.saveAll(profileId, groupId, newBudgets);
       toast({
         title: "Success",
-        description: "Budgets saved successfully.",
+        description: "Budgets saved."
       });
+      await refreshData();
     } catch (err: any) {
-      console.error("Error saving budgets:", err);
       toast({
         title: "Error",
-        description: err.message || "Failed to save budgets. Please try again.",
-        variant: "destructive",
+        description: err.message,
+        variant: "destructive"
       });
     }
   };
@@ -343,148 +334,169 @@ export default function Home() {
   };
 
   const getPageTitle = () => {
-    if (isGroupView()) {
-      return currentGroup?.name || "Group Dashboard";
-    }
+    if (isGroupView()) return currentGroup?.name || "Group Dashboard";
     return currentProfile?.name ? `${currentProfile.name}'s Dashboard` : "Personal Dashboard";
   };
   
+  if (!isClient) {
+    return (
+        <div className="flex h-screen w-full items-center justify-center">
+            <Loader2 className="h-12 w-12 animate-spin text-purple-600" />
+        </div>
+    );
+  }
+
   const renderContent = () => {
     if (loading) {
-        return <div className="flex items-center justify-center py-20 min-h-[60vh]"><Loader2 className="h-12 w-12 animate-spin mx-auto text-blue-600" /></div>;
+      return <div className="flex justify-center items-center min-h-[60vh]"><Loader2 className="h-12 w-12 animate-spin text-purple-600" /></div>;
     }
     if (error) {
-        return ( 
-          <div className="flex items-center justify-center py-20 min-h-[60vh]">
-            <div className="max-w-md mx-auto">
-              <Alert variant="destructive" className="mb-4" >
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription> 
-                  {error} 
-                </AlertDescription> 
-              </Alert> 
-              <Button onClick={refreshData} className="w-full" >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Retry 
-              </Button> 
-            </div> 
+      return (
+        <div className="flex items-center justify-center py-20 min-h-[60vh]">
+          <div className="max-w-md mx-auto">
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                {error}
+              </AlertDescription>
+            </Alert>
+            <Button onClick={refreshData} className="w-full">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Retry
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    switch (activeTab) {
+      case "overview":
+        return (
+          <div className="space-y-8">
+            <FinanceStats transactions={transactions} isGroupView={isGroupView()} />
+            <ExpenseChart transactions={transactions} />
           </div>
         );
-    }
-    switch (activeTab) {
-        case "overview":
-            return ( 
-              <div className="space-y-8">
-                <FinanceStats transactions={transactions} isGroupView={isGroupView()}/> 
-                <ExpenseChart transactions={transactions}/> 
+      case "categories":
+        return <CategoryChart transactions={transactions} />;
+      case "budget":
+        return (
+          <div className="space-y-8">
+            <div className="flex flex-col items-center md:items-start md:flex-row md:justify-between gap-4">
+              <div className="text-center md:text-left">
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent">
+                  Budget Management
+                </h2>
+                <p className="text-muted-foreground mt-2 text-lg">
+                  Set and track your monthly spending goals
+                </p>
               </div>
-            );
-        case "categories":
-            return <CategoryChart transactions={transactions}/>;
-        case "budget":
-            return ( 
-              <div className="space-y-8">
-                <div className="flex flex-col items-center md:items-start md:flex-row md:justify-between gap-4">
-                  <div className="text-center md:text-left">
-                    <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                      Budget Management 
-                    </h2> 
-                    <p className="text-muted-foreground mt-2 text-lg">
-                      Set and track your monthly spending goals 
-                    </p> 
-                  </div> 
-                  {!isGroupView() && ( 
-                    <BudgetSetup budgets={budgets} onSaveBudgets={handleSaveBudgets}/>
-                  )} 
-                </div> 
-                <BudgetOverview budgets={budgets}/> 
-                {budgets.length > 0 && <BudgetChart budgets={budgets}/>} 
-              </div>
-            );
-        case "add":
-            return ( 
-              <TransactionForm onSubmit={handleAddTransaction}
-                               editingTransaction={editingTransaction}
-                               onCancel={handleCancelEdit}
-                               isGroupView={isGroupView()}
+              {!isGroupView() && (
+                <BudgetSetup budgets={budgets} onSaveBudgets={handleSaveBudgets} />
+              )}
+            </div>
+            <BudgetOverview budgets={budgets} />
+            {budgets.length > 0 && <BudgetChart budgets={budgets} />}
+          </div>
+        );
+      case "add":
+        return (
+          <TransactionForm
+            onSubmit={handleAddTransaction}
+            editingTransaction={editingTransaction}
+            onCancel={handleCancelEdit}
+            isGroupView={isGroupView()}
+            assets={assets}
+          />
+        );
+      case "transactions":
+        return (
+          <TransactionList
+            transactions={transactions}
+            onEdit={handleEditTransaction}
+            onDelete={handleDeleteTransaction}
+            isGroupView={isGroupView()}
+          />
+        );
+      case "recurring":
+        return <RecurringTransactionForm onSave={refreshData} />;
+      case "assets":
+        return (
+          <div className="space-y-6">
+            {showAssetForm ? (
+              <AssetForm
+                assetToEdit={editingAsset}
+                onSave={handleSaveAsset}
+                onCancel={() => { setShowAssetForm(false); setEditingAsset(undefined); }}
               />
-            );
-        case "transactions":
-            return ( 
-              <TransactionList transactions={transactions}
-                               onEdit={handleEditTransaction}
-                               onDelete={handleDeleteTransaction}
-                               isGroupView={isGroupView()}
-              />
-            );
-        case "recurring":
-            return <RecurringTransactionForm onSave={refreshData}/>;
-        case "split":
-            return ( 
-              <ExpenseSplit splitData={splitData}
-                            loading={loading}
-                            isGroupView={isGroupView()}
-                            onSettleUp={handleSettleUp}
-              />
-            );
-        case "reports":
-            return <FinancialReports />;
-        default:
-            return null;
+            ) : (
+              <>
+                <div className="flex justify-end">
+                  <Button onClick={() => { setEditingAsset(undefined); setShowAssetForm(true); }}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add New Asset
+                  </Button>
+                </div>
+                <AssetList
+                  assets={assets}
+                  transactions={transactions}
+                  onEdit={handleEditAsset}
+                  onDelete={handleDeleteAsset}
+                />
+              </>
+            )}
+          </div>
+        );
+      case "split":
+        return (
+          <ExpenseSplit
+            splitData={splitData}
+            loading={loading}
+            isGroupView={isGroupView()}
+            onSettleUp={handleSettleUp}
+          />
+        );
+      case "reports":
+        return <FinancialReports />;
+      default:
+        return null;
     }
   };
 
-
-  if (groups.length === 0 && loading) {
-    return <div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-12 w-12 animate-spin" /></div>;
-  }
-
   if (groups.length === 0 && !loading) {
-    return ( 
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-6 max-w-md p-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> 
-            Welcome to Budget Guru! 
-          </h1> 
-          <p className="text-muted-foreground text-lg">
-            Get started by creating your first profile group. 
-          </p> 
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-6">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent">
+            Welcome to Budget Guru!
+          </h1>
+          <p className="text-muted-foreground text-lg">Create a profile to get started.</p>
           <CreateProfileDialog />
-        </div> 
+        </div>
       </div>
     );
   }
 
-  return ( 
+  return (
     <div className="min-h-screen bg-background flex">
-      <Sidebar activeTab={activeTab} onTabChange={setActiveTab}/> 
-      <div className="flex-1 md:ml-72 overflow-y-auto h-screen">
-        <div className="container mx-auto px-4 py-8 md:px-8 md:py-12 max-w-7xl relative">
-          <div className="absolute top-4 right-4 md:right-8 z-10">
-            <ThemeToggle />
-          </div> 
-          <div className="mb-12 mt-16 md:mt-0">
-            <div className="text-center">
-              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4"> 
-                {getPageTitle()} 
-              </h1> 
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
-                Complete financial management with expense tracking, budgeting, and intelligent insights. 
-              </p> 
-              {currentGroup && 
-                <div className="flex justify-center"> 
-                  <ViewModeToggle /> 
-                </div>
-              } 
-            </div> 
-          </div> 
-          <div className="space-y-8 flex flex-col items-center md:items-stretch">
-            <div className="w-full max-w-6xl mx-auto"> 
-              {renderContent()} 
-            </div> 
-          </div> 
-        </div> 
-      </div> 
+      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      <main className="flex-1 md:ml-72 overflow-y-auto h-screen p-4 md:p-8">
+        <div className="absolute top-4 right-4 md:right-8 z-10">
+          <ThemeToggle />
+        </div>
+        <header className="mb-12 mt-16 md:mt-0 text-center">
+          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent mb-4">
+            {getPageTitle()}
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
+            Your complete financial command center.
+          </p>
+          {currentGroup && <div className="flex justify-center"><ViewModeToggle /></div>}
+        </header>
+        <div className="w-full max-w-6xl mx-auto">
+          {renderContent()}
+        </div>
+      </main>
     </div>
   );
 }

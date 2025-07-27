@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 export interface IProfileTransaction extends mongoose.Document {
   profileId: mongoose.Types.ObjectId;
   groupId: mongoose.Types.ObjectId;
+  assetId?: mongoose.Types.ObjectId; // ADDED: Optional link to an Asset
   amount: number;
   date: string;
   description: string;
@@ -10,7 +11,7 @@ export interface IProfileTransaction extends mongoose.Document {
   category: string;
   isRecurring: boolean;
   recurringFrequency?: 'daily' | 'weekly' | 'monthly' | 'yearly';
-  recurringDayOfMonth?: number; // Now stores 1-32
+  recurringDayOfMonth?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -27,6 +28,12 @@ const ProfileTransactionSchema = new mongoose.Schema<IProfileTransaction>(
       required: [true, "Group ID is required"],
       ref: 'UserGroup',
       index: true,
+    },
+    assetId: { // ADDED
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Asset', // This should match the model name you use for assets
+      index: true,
+      default: null,
     },
     amount: {
       type: Number,
