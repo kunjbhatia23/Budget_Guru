@@ -1,3 +1,4 @@
+// kunjbhatia23/budget_guru/Budget_Guru-5fc8173f4eb07b451f8a37faf6a16fae98c2b211/components/TransactionForm.tsx
 'use client';
 
 import {
@@ -72,7 +73,8 @@ export function TransactionForm({
   assets
 }: TransactionFormProps) {
   const {
-    currentGroup
+    currentGroup,
+    currentProfile
   } = useProfileStore();
 
   const [amount, setAmount] = useState('');
@@ -214,8 +216,9 @@ export function TransactionForm({
         description: description.trim(),
         type: type,
         category: category.trim(),
-        profileId: currentGroup?.profiles[0]?._id || '',
-        groupId: currentGroup?._id || currentGroup?.id || '',
+        // --- FIX: Use original profile/group IDs when editing, otherwise use current profile ---
+        profileId: editingTransaction?.profileId || currentProfile?._id || '',
+        groupId: editingTransaction?.groupId || currentGroup?._id || '',
         createdAt: editingTransaction?.createdAt || new Date().toISOString(),
         assetId: assetId === 'none' ? undefined : assetId,
       };

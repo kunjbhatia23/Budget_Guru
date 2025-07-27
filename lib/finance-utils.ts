@@ -1,4 +1,3 @@
-// Update file: lib/finance-utils.ts
 import { Transaction, MonthlyExpense, CategoryExpense, Budget, SpendingInsight } from '@/types/finance';
 import { VALIDATION_CONFIG, UI_CONFIG } from './constants';
 

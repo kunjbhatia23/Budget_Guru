@@ -1,68 +1,105 @@
-import { NextRequest, NextResponse } from "next/server";
-import dbConnect from "@/lib/db";
-import ProfileTransaction from "@/models/ProfileTransaction";
-import mongoose from "mongoose";
+import {
+    NextRequest,
+    NextResponse
+} from 'next/server';
+import dbConnect from '@/lib/db';
+import ProfileTransaction from '@/models/ProfileTransaction';
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-): Promise<NextResponse> {
-  const { id } = params;
-  try {
-    await dbConnect();
-    const body = await request.json();
-
-    // Prepare the update object, unsetting assetId if it's null or an empty string
-    const updateData: { [key: string]: any } = { ...body };
-    if (body.assetId) {
-        updateData.assetId = new mongoose.Types.ObjectId(body.assetId);
-    } else {
-        // If assetId is missing or null, ensure it's removed from the document
-        updateData.$unset = { assetId: 1 };
+export async function PUT(req: NextRequest, {
+    params
+}: {
+    params: {
+        id: string
     }
+}) {
+    try {
+        await dbConnect();
+        const body = await req.json();
+        const {
+            id,
+            _id,
+            assetId,
+            ...updateData
+        } = body;
 
-    const updatedTransaction = await ProfileTransaction.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true, runValidators: true }
-    );
+        const updateOps: any = {
+            $set: updateData
+        };
 
-    if (!updatedTransaction) {
-      return NextResponse.json(
-        { error: "Transaction not found" },
-        { status: 404 }
-      );
+        // This block prevents the database conflict.
+        if (assetId && assetId !== 'none') {
+            updateOps.$set.assetId = assetId;
+        } else {
+            updateOps.$unset = {
+                assetId: ""
+            };
+        }
+
+        const updatedTransaction = await ProfileTransaction.findByIdAndUpdate(
+            params.id,
+            updateOps, {
+                new: true,
+                runValidators: true
+            }
+        ).lean();
+
+        if (!updatedTransaction) {
+            return NextResponse.json({
+                message: 'Transaction not found'
+            }, {
+                status: 404
+            });
+        }
+
+        return NextResponse.json(updatedTransaction, {
+            status: 200
+        });
+
+    } catch (error: any) {
+        console.error('Error updating profile transaction:', error);
+        const status = error.name === 'ValidationError' ? 400 : 500;
+        return NextResponse.json({
+            message: error.message,
+            error: error
+        }, {
+            status
+        });
     }
-    return NextResponse.json(updatedTransaction);
-  } catch (error) {
-    console.error("Error updating profile transaction:", error);
-    return NextResponse.json(
-      { error: "Failed to update transaction" },
-      { status: 500 }
-    );
-  }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-): Promise<NextResponse> {
-  const { id } = params;
-  try {
-    await dbConnect();
-    const deletedTransaction = await ProfileTransaction.findByIdAndDelete(id);
-    if (!deletedTransaction) {
-      return NextResponse.json(
-        { error: "Transaction not found" },
-        { status: 404 }
-      );
+export async function DELETE(req: NextRequest, {
+    params
+}: {
+    params: {
+        id: string
     }
-    return NextResponse.json({ message: "Transaction deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting profile transaction:", error);
-    return NextResponse.json(
-      { error: "Failed to delete transaction" },
-      { status: 500 }
-    );
-  }
+}) {
+    try {
+        await dbConnect();
+
+        const deletedTransaction = await ProfileTransaction.findByIdAndDelete(params.id);
+
+        if (!deletedTransaction) {
+            return NextResponse.json({
+                message: 'Transaction not found'
+            }, {
+                status: 404
+            });
+        }
+
+        return NextResponse.json({
+            message: 'Transaction deleted successfully'
+        }, {
+            status: 200
+        });
+
+    } catch (error: any) {
+        console.error('Error deleting profile transaction:', error);
+        return NextResponse.json({
+            message: 'Server error',
+            error: error.message
+        }, {
+            status: 500
+        });
+    }
 }
