@@ -10,7 +10,8 @@ import {
   DollarSign,
   Target,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  IndianRupee
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -54,7 +55,7 @@ export function FinanceStats({ transactions, isGroupView }: FinanceStatsProps) {
     {
       title: 'Total Balance',
       value: formatCurrency(netOverallBalance), // Use netOverallBalance here
-      icon: DollarSign,
+      icon: IndianRupee,
       color: netOverallBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400',
       bgColor: netOverallBalance >= 0 ? 'bg-green-50 dark:bg-green-900/50' : 'bg-red-50 dark:bg-red-900/50',
       borderColor: netOverallBalance >= 0 ? 'border-green-200 dark:border-green-700' : 'border-red-200 dark:border-red-700',
