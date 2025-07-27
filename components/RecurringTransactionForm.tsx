@@ -55,9 +55,10 @@ import {
 import {
   useProfileStore
 } from '@/store/profile-store';
+// --- FIX: Import the correct API handler ---
 import {
-  transactionApi
-} from '@/lib/api';
+  profileTransactionApi
+} from '@/lib/profile-api';
 import {
   useToast
 } from '@/hooks/use-toast';
@@ -85,7 +86,7 @@ export function RecurringTransactionForm({
   const [type, setType] = useState < 'income' | 'expense' > ('expense');
   const [category, setCategory] = useState('');
   const [recurringFrequency, setRecurringFrequency] = useState < 'daily' | 'weekly' | 'monthly' | 'yearly' > ('monthly');
-  const [recurringDayOfMonth, setRecurringDayOfMonth] = useState < number > (28);
+  const [recurringDayOfMonth, setRecurringDayOfMonth] = useState < number > (15);
   const [errors, setErrors] = useState < Record < string, string >> ({});
 
   const categories = type === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
@@ -107,7 +108,7 @@ export function RecurringTransactionForm({
 
     const validationErrors = validateTransaction(
       amount,
-      new Date().toISOString().split('T')[0],
+      new Date().toISOString().split('T')[0], // Use current date for validation purposes
       description,
       category
     );
@@ -129,36 +130,37 @@ export function RecurringTransactionForm({
       });
       return;
     }
-
-    // --- FIX: Create a fully typed object that matches what the API expects ---
-    const transactionData: Omit<ProfileTransaction, 'id' | '_id' | 'createdAt' | 'updatedAt'> = {
-      amount: safeParseFloat(amount),
-      date: new Date().toISOString().split('T')[0],
-      description: description.trim(),
-      type,
-      category: category.trim(),
-      isRecurring: true,
-      recurringFrequency,
-      profileId,
-      groupId,
+    
+    const transactionData: Omit < ProfileTransaction, '_id' | 'createdAt' | 'updatedAt' > = {
+        amount: safeParseFloat(amount),
+        date: new Date().toISOString().split('T')[0], // This will be the start date
+        description: description.trim(),
+        type,
+        category: category.trim(),
+        isRecurring: true,
+        recurringFrequency,
+        profileId,
+        groupId,
     };
-
+    
     if (recurringFrequency === 'monthly') {
-      transactionData.recurringDayOfMonth = recurringDayOfMonth;
+        transactionData.recurringDayOfMonth = recurringDayOfMonth;
     }
 
     try {
-      await transactionApi.create(transactionData);
+      // --- FIX: Call the correct API endpoint ---
+      await profileTransactionApi.create(transactionData);
       toast({
         title: 'Success',
         description: 'Recurring transaction saved.',
       });
       if (onSave) onSave();
 
+      // Reset form
       setAmount('');
       setDescription('');
       setCategory('');
-      setRecurringDayOfMonth(28);
+      setRecurringDayOfMonth(15);
       setType('expense');
 
     } catch (err: any) {
