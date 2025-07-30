@@ -339,7 +339,7 @@ export function FinancialReports() {
         <CardContent className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
             <div className="flex-1 w-full space-y-1">
-              <p className="text-sm font-medium">Current Scope:</p>
+              <p className="text-sm font-medium">Current Profile:</p>
               <div className="p-2 border rounded-md bg-muted/30 h-10 flex items-center">
                 {isGroupView()
                   ? `Group: ${currentGroup?.name}`
