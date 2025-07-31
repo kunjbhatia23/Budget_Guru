@@ -50,6 +50,8 @@ A comprehensive personal finance management application built with Next.js, Type
 ![Add Transaction](Screenshots/Screenshot%202025-08-01%20001037.png)
 **Split Group Expenses**
 ![Split Group Expenses](Screenshots/Screenshot%202025-08-01%20001052.png)
+**Generate Financial Report**
+![Generate Financial Report](Screenshots/Screenshot%202025-08-01%20002000.png)
 
 ## Getting Started
 
