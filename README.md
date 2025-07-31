@@ -42,14 +42,14 @@ A comprehensive personal finance management application built with Next.js, Type
   - **Icons**: Lucide React
 
 ## Screenshots Of Project
+**Dashboard**
 ![Dashboard](Screenshots/Screenshot%202025-08-01%20000843.png)
-- **Dashboard**
+**Transaction History**
 ![Transaction History](Screenshots/Screenshot%202025-08-01%20001019.png)
-- **Transaction History**
+**Add Transaction**
 ![Add Transaction](Screenshots/Screenshot%202025-08-01%20001037.png)
-- **Add Transaction**
+**Split Group Expenses**
 ![Split Group Expenses](Screenshots/Screenshot%202025-08-01%20001052.png)
-- **Split Group Expenses**
 
 ## Getting Started
 
