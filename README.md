@@ -43,9 +43,13 @@ A comprehensive personal finance management application built with Next.js, Type
 
 ## Screenshots Of Project
 ![Dashboard](Screenshots/Screenshot%202025-08-01%20000843.png)
-![Transaction History](Screenshots/Screenshot%202025-08-01%20001019.png)   
-![Add Transaction](Screenshots/Screenshot%202025-08-01%20001037.png)   
-![Split Group Expenses](Screenshots/Screenshot%202025-08-01%20001052.png)  
+- **Dashboard**
+![Transaction History](Screenshots/Screenshot%202025-08-01%20001019.png)
+- **Transaction History**
+![Add Transaction](Screenshots/Screenshot%202025-08-01%20001037.png)
+- **Add Transaction**
+![Split Group Expenses](Screenshots/Screenshot%202025-08-01%20001052.png)
+- **Split Group Expenses**
 
 ## Getting Started
 
