@@ -55,10 +55,4 @@ These features focus on keeping users engaged with their finances and making Bud
 * #### **Full Mobile App Development**
     Bring the full power of Budget Guru to iOS and Android, ensuring users can manage their money on the go.
     * **Native Experience:** A dedicated mobile app with a user-friendly interface optimized for smaller screens.
-    * **Essential Mobile Features:** Include push notifications for bill reminders, offline access for logging expenses anytime, and home screen widgets for a quick glance at their financial status.
-
-* #### **Screenshots Of Project**
-![Dashboard](Screenshots/Screenshot%202025-08-01%20000843.png)
-![Transaction History](Screenshots/Screenshot%202025-08-01%20001019.png)   
-![Add Transaction](Screenshots/Screenshot%202025-08-01%20001037.png)   
-![Split Group Expenses](Screenshots/Screenshot%202025-08-01%20001052.png)   
+    * **Essential Mobile Features:** Include push notifications for bill reminders, offline access for logging expenses anytime, and home screen widgets for a quick glance at their financial status. 

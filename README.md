@@ -41,6 +41,12 @@ A comprehensive personal finance management application built with Next.js, Type
   - **CSV/Excel Export**: `xlsx` (SheetJS)
   - **Icons**: Lucide React
 
+## Screenshots Of Project
+![Dashboard](Screenshots/Screenshot%202025-08-01%20000843.png)
+![Transaction History](Screenshots/Screenshot%202025-08-01%20001019.png)   
+![Add Transaction](Screenshots/Screenshot%202025-08-01%20001037.png)   
+![Split Group Expenses](Screenshots/Screenshot%202025-08-01%20001052.png)  
+
 ## Getting Started
 
 ### Prerequisites
@@ -168,3 +174,4 @@ npm start
 | --- | --- | --- |
 | `MONGODB_URI` | MongoDB connection string. | Yes |
 | `NODE_ENV` | Set to `production` for builds. | No |
+
