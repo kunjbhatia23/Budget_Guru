@@ -7,6 +7,7 @@ interface IProfile extends Document {
 }
 
 interface IUserGroup extends Document {
+  userId: mongoose.Types.ObjectId; // Add this line
   name: string;
   type: 'family' | 'roommates' | 'personal' | 'other' | 'friends';
   profiles: IProfile[];
@@ -40,6 +41,12 @@ const ProfileSchema = new Schema<IProfile>(
 
 const UserGroupSchema = new Schema<IUserGroup>(
   {
+    userId: { // Add this entire block
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+      index: true,
+    },
     name: {
       type: String,
       required: [true, "Group name is required"],
@@ -51,7 +58,6 @@ const UserGroupSchema = new Schema<IUserGroup>(
       type: String,
       required: [true, "Group type is required"],
       enum: {
-        // *** CRITICAL FIX: Ensure 'friends' is in the schema enum ***
         values: ['family', 'roommates', 'personal', 'other', 'friends'],
         message: 'Type must be one of: family, roommates, personal, friends, other',
       },
