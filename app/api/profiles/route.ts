@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/db";
 import UserGroup from "@/models/UserGroup";
 
 export async function GET() {
+  const session = await getServerSession(authOptions);
+
+  if (!session || !(session.user as any)?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     await dbConnect();
-    const groups = await UserGroup.find({}).lean();
+    const userId = (session.user as any).id;
+    const groups = await UserGroup.find({ userId: userId }).lean();
     return NextResponse.json(groups);
   } catch (error) {
     console.error("Error fetching user groups:", error);
@@ -15,7 +24,7 @@ export async function GET() {
         details:
           process.env.NODE_ENV === "development" && error instanceof Error
             ? error.message
-            : undefined,
+            : "An internal server error occurred.",
       },
       { status: 500 }
     );
@@ -23,11 +32,18 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const session = await getServerSession(authOptions);
+
+  if (!session || !(session.user as any)?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     await dbConnect();
     const body = await request.json();
+    const userId = (session.user as any).id;
 
-    // Validate name
+    // --- Validation ---
     if (!body.name || typeof body.name !== "string" || body.name.trim() === "") {
       return NextResponse.json(
         { error: "Group name is required" },
@@ -35,7 +51,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // *** CRITICAL FIX: Ensure 'friends' is in this validation array ***
     const allowedGroupTypes = ['family', 'roommates', 'personal', 'other', 'friends'];
     if (!body.type || !allowedGroupTypes.includes(body.type)) {
       return NextResponse.json(
@@ -44,7 +59,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate profiles
     if (!Array.isArray(body.profiles) || body.profiles.length === 0) {
       return NextResponse.json(
         { error: "At least one profile is required" },
@@ -60,8 +74,8 @@ export async function POST(request: NextRequest) {
         );
       }
     }
+    // --- End Validation ---
 
-    // Create and save the new group
     const group = new UserGroup({
       name: body.name.trim(),
       type: body.type,
@@ -70,6 +84,7 @@ export async function POST(request: NextRequest) {
         avatar: p.avatar || '',
         color: p.color || '#3B82F6',
       })),
+      userId: userId, // Associate the group with the logged-in user
     });
 
     const savedGroup = await group.save();
@@ -92,7 +107,7 @@ export async function POST(request: NextRequest) {
       {
         error: "Failed to create user group",
         details:
-          process.env.NODE_ENV === "development" ? error.message : undefined,
+          process.env.NODE_ENV === "development" ? error.message : "An internal server error occurred.",
       },
       { status: 500 }
     );

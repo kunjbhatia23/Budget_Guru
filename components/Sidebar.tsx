@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -20,7 +21,8 @@ import {
   Scale,
   FileText,
   Repeat,
-  Landmark as AssetIcon, // Icon for Assets
+  Landmark as AssetIcon,
+  LogOut, // Icon for Logout
 } from "lucide-react";
 
 interface SidebarProps {
@@ -181,7 +183,6 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
                         "bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg shadow-purple-500/25",
                       !isActive &&
                         "hover:bg-accent hover:text-accent-foreground hover:scale-[1.02] hover:shadow-sm",
-                      // Apply special style if not active and has specialStyle flag
                       item.specialStyle && !isActive &&
                         "border border-purple-200 bg-purple-50/50 dark:border-purple-800 dark:bg-purple-950/50"
                     )}
@@ -230,13 +231,38 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
                     )}
                   </Button>
 
-                  {/* Active indicator */}
                   {isActive && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-br from-purple-600 to-purple-700 rounded-r-full shadow-sm" />
                   )}
                 </div>
               );
             })}
+            
+            {/* Logout Button */}
+            <div className="relative pt-2">
+              <Button
+                variant="ghost"
+                className={cn(
+                  "w-full justify-start gap-3 h-12 transition-all duration-200 group relative overflow-hidden",
+                  isCollapsed ? "px-3" : "px-4",
+                  "hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/50"
+                )}
+                onClick={() => signOut({ callbackUrl: '/auth/login' })}
+                aria-label="Logout"
+              >
+                <LogOut className="h-5 w-5 flex-shrink-0 text-muted-foreground group-hover:text-red-600" />
+                {!isCollapsed && (
+                  <div className="flex-1 text-left">
+                    <div className="font-medium text-sm text-foreground">
+                      Logout
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Sign out of your account
+                    </div>
+                  </div>
+                )}
+              </Button>
+            </div>
           </nav>
 
           <Separator className="mx-4" />
