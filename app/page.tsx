@@ -471,7 +471,9 @@ export default function Home() {
             Welcome to Budget Guru!
           </h1>
           <p className="text-muted-foreground text-lg">Create a profile to get started.</p>
+          <div className="flex justify-center">
           <CreateProfileDialog />
+          </div>
         </div>
       </div>
     );

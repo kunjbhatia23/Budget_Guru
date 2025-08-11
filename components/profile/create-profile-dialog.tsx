@@ -128,14 +128,14 @@ export function CreateProfileDialog() {
       <DialogTrigger asChild>
         <Button variant="outline" className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
-          Create Group
+          Create Profile / Group
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Create New Profile Group
+            Create New Profile / Group
           </DialogTitle>
           <DialogDescription>
             Set up a new group with multiple profiles for tracking finances together.
