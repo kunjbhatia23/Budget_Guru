@@ -196,9 +196,9 @@ export function TransactionList({
                           </Badge>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <div className="text-sm text-muted-foreground">
                         {formatDate(transaction.date)} • <Badge variant="secondary" className="text-xs">{transaction.category}</Badge>
-                      </p>
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
