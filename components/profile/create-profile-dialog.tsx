@@ -128,7 +128,7 @@ export function CreateProfileDialog() {
       <DialogTrigger asChild>
         <Button variant="outline" className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
-          Create Profile / Group
+          Create Group
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
